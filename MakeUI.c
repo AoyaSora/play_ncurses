@@ -8,11 +8,23 @@ typedef struct {
     double px, py; //Position(位置)
     double vx, vy; //Velocity(速度) 
 } Cobj;            // cursor object(カーソルの場所)
+
+/* UIの部品 外枠 */
+typedef struct {
+    int x, y; // top left position
+    int w, h; // width, height 
+} UIobj;
 /* カーソルの初期化 */
 void InitCobj(Cobj *obj, double px,double py,double vx,double vy)
 {
     obj->px = px; obj->py = py;
     obj->vx = vx; obj->vy = vy;
+}
+/* UIの外枠の初期化　*/
+void InitUIobj(UIobj * obj, int x, int y, int w, int h)
+{
+    obj->x = x; obj->y = y;
+    obj->w = w; obj->h = h;
 }
 /* カーソルの構造体情報制御 キー入力　*/
 int ControlCursor(Cobj *obj)
@@ -33,12 +45,12 @@ int ControlCursor(Cobj *obj)
 }
 /* カーソルの移動制御　*/
 /* ここでUI情報の最大値最小値受け取ったら移動範囲を制限できる　*/
-void MoveCursor(Cobj *obj)
+void MoveCursor(Cobj *obj, UIobj *wall)
 {
 	int	w, h;
 	getmaxyx(stdscr, h, w);
-    if((obj->px + obj->vx >= 0) && (obj->px + obj->vx <= w-1 )) obj->px += obj->vx;
-    if((obj->py + obj->vy >= 0) && (obj->py + obj->vy <= h-1 )) obj->py += obj->vy;
+    if((obj->px + obj->vx >= 0) && (obj->px + obj->vx <= w-1 ) &&(obj->px + obj->vx != wall->x ) && (obj->px + obj->vx != wall->x + wall->w - 1)) obj->px += obj->vx;
+    if((obj->py + obj->vy >= 0) && (obj->py + obj->vy <= h-1 ) &&(obj->py + obj->vy != wall->y ) && (obj->py + obj->vy != wall->y + wall->h -1 )) obj->py += obj->vy;
 }
 /* カーソルの表示　*/
 void DrawCursor(Cobj *obj)
@@ -48,14 +60,14 @@ void DrawCursor(Cobj *obj)
 }
 
 /* 引数で左上のxyと幅，高さを受け取る　*/
-void DrawUI(int y, int x, int h, int w)
+void DrawUI(UIobj *obj)
 {
-    int widthLine = w - 2;
-    int heightLine = h -2;
+    int widthLine = obj->w - 2;
+    int heightLine = obj->h -2;
    
     /* 枠　*/
     //左上
-   move(y,x);
+   move(obj->y,obj->x);
    addch('+');
    //右上まで
    for(int i =0; i < widthLine;i++)
@@ -67,13 +79,13 @@ void DrawUI(int y, int x, int h, int w)
    // 左右の'|'を下まで
    for(int j=0; j < heightLine; j++)
    {
-    move(y+1+j,x);
+    move( obj->y + 1 + j, obj->x );
     addch('|');
-    move(y+1+j, x+w-1);
+    move( obj->y + 1 + j, obj->x + obj->w - 1);
     addch('|');
    }
    //左下
-   move(y+1+heightLine,x);
+   move( obj->y + 1 + heightLine , obj->x );
    addch('+');
    //右下まで
    for(int i =0; i < widthLine;i++)
@@ -87,21 +99,23 @@ void DrawUI(int y, int x, int h, int w)
 void MainScreen()
 {
     Cobj c;
+    UIobj menu;
     int w,h;
 
     //初期設定
     getmaxyx(stdscr, h, w);
     InitCobj(&c,(double)w/2.0, (double)h/2.0, 0.0, 0.0);
+    InitUIobj(&menu,0,0,w,h);
     timeout(0);
     while(1){
         erase();
         refresh();
-        DrawUI(0,0,h,w);
+        DrawUI(&menu);
         DrawCursor(&c);
 
         // キー入力
         if(ControlCursor(&c) == 'q') break;
-        MoveCursor(&c);
+        MoveCursor(&c, &menu);
 
         // 動作速度調節
         usleep(20000);
