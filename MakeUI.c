@@ -2,7 +2,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <math.h>
-
 /* カーソルの構造体　*/
 typedef struct {
     double px, py; //Position(位置)
@@ -25,6 +24,7 @@ void InitUIobj(UIobj * obj, int x, int y, int w, int h)
 {
     obj->x = x; obj->y = y;
     obj->w = w; obj->h = h;
+
 }
 /* カーソルの構造体情報制御 キー入力　*/
 int ControlCursor(Cobj *obj)
@@ -45,12 +45,12 @@ int ControlCursor(Cobj *obj)
 }
 /* カーソルの移動制御　*/
 /* ここでUI情報の最大値最小値受け取ったら移動範囲を制限できる　*/
-void MoveCursor(Cobj *obj, UIobj *wall)
+void MoveCursor(Cobj *obj)
 {
 	int	w, h;
 	getmaxyx(stdscr, h, w);
-    if((obj->px + obj->vx >= 0) && (obj->px + obj->vx <= w-1 ) &&(obj->px + obj->vx != wall->x ) && (obj->px + obj->vx != wall->x + wall->w - 1)) obj->px += obj->vx;
-    if((obj->py + obj->vy >= 0) && (obj->py + obj->vy <= h-1 ) &&(obj->py + obj->vy != wall->y ) && (obj->py + obj->vy != wall->y + wall->h -1 )) obj->py += obj->vy;
+    if((obj->px + obj->vx >= 0) && (obj->px + obj->vx <= w-1 ) && (mvinch(obj->py,obj->px + obj->vx)& A_CHARTEXT) == ' ') obj->px += obj->vx;
+    if((obj->py + obj->vy >= 0) && (obj->py + obj->vy <= h-1 ) &&( mvinch(obj->py + obj->vy, obj->px) & A_CHARTEXT) == ' ') obj->py += obj->vy;
 }
 /* カーソルの表示　*/
 void DrawCursor(Cobj *obj)
@@ -115,7 +115,7 @@ void MainScreen()
 
         // キー入力
         if(ControlCursor(&c) == 'q') break;
-        MoveCursor(&c, &menu);
+        MoveCursor(&c);
 
         // 動作速度調節
         usleep(20000);
