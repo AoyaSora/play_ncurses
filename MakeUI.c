@@ -105,11 +105,11 @@ void MainScreen()
     //初期設定
     getmaxyx(stdscr, h, w);
     InitCobj(&c,(double)w/2.0, (double)h/2.0, 0.0, 0.0);
-    InitUIobj(&menu,0,0,w,h);
     timeout(0);
     while(1){
         erase();
         refresh();
+        InitUIobj(&menu,0,0,10,10);
         DrawUI(&menu);
         DrawCursor(&c);
 
@@ -132,8 +132,6 @@ int main(void)
 	noecho();		// 入力されたキーを表示しない
 	cbreak();		// 入力バッファを使わない(Enter 不要の入力)
 	keypad(stdscr, TRUE);	// カーソルキーを使用可能にする
-
-    addstr("the position of this text is 2,5");
 
     /* 本体　*/
     MainScreen();
