@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <math.h>
-
+#include <stdio.h>
 /* カーソルの構造体　*/
 typedef struct {
     double px, py; //Position(位置)
@@ -25,6 +25,7 @@ void InitUIobj(UIobj * obj, int x, int y, int w, int h)
 {
     obj->x = x; obj->y = y;
     obj->w = w; obj->h = h;
+
 }
 /* カーソルの構造体情報制御 キー入力　*/
 int ControlCursor(Cobj *obj)
@@ -37,6 +38,7 @@ int ControlCursor(Cobj *obj)
         case KEY_DOWN : obj->vy = 1.0; break;
         case KEY_LEFT : obj->vx = -1.0; break;
         case KEY_RIGHT : obj->vx = 1.0; break;
+        case ' ' : return ('s'); break;
         case 'q': case 'Q': case'\e': return ('q'); break;
         default : break;
 
@@ -45,12 +47,12 @@ int ControlCursor(Cobj *obj)
 }
 /* カーソルの移動制御　*/
 /* ここでUI情報の最大値最小値受け取ったら移動範囲を制限できる　*/
-void MoveCursor(Cobj *obj, UIobj *wall)
+void MoveCursor(Cobj *obj)
 {
 	int	w, h;
 	getmaxyx(stdscr, h, w);
-    if((obj->px + obj->vx >= 0) && (obj->px + obj->vx <= w-1 ) &&(obj->px + obj->vx != wall->x ) && (obj->px + obj->vx != wall->x + wall->w - 1)) obj->px += obj->vx;
-    if((obj->py + obj->vy >= 0) && (obj->py + obj->vy <= h-1 ) &&(obj->py + obj->vy != wall->y ) && (obj->py + obj->vy != wall->y + wall->h -1 )) obj->py += obj->vy;
+    if((obj->px + obj->vx >= 0) && (obj->px + obj->vx <= w-1 ) && (mvinch(obj->py, obj->px + obj->vx) & A_CHARTEXT) == ' ' || (mvinch(obj->py, obj->px + obj->vx) & A_CHARTEXT) == '*') obj->px += obj->vx;
+    if((obj->py + obj->vy >= 0) && (obj->py + obj->vy <= h-1 ) && (mvinch(obj->py + obj->vy, obj->px) & A_CHARTEXT) == ' ' || (mvinch(obj->py + obj->vy, obj->px) & A_CHARTEXT) =='*') obj->py += obj->vy;
 }
 /* カーソルの表示　*/
 void DrawCursor(Cobj *obj)
@@ -94,6 +96,9 @@ void DrawUI(UIobj *obj)
    }
    //右下
    addch('+');
+   // '*'表示
+   move( obj->y + 3, obj->x +3 );
+   addch('*');
 }
 
 void MainScreen()
@@ -101,21 +106,30 @@ void MainScreen()
     Cobj c;
     UIobj menu;
     int w,h;
+    char input;
+    FILE *fp;
 
     //初期設定
     getmaxyx(stdscr, h, w);
     InitCobj(&c,(double)w/2.0, (double)h/2.0, 0.0, 0.0);
-    InitUIobj(&menu,0,0,w,h);
     timeout(0);
     while(1){
         erase();
         refresh();
+        InitUIobj(&menu,0,0,w,h);
         DrawUI(&menu);
         DrawCursor(&c);
 
         // キー入力
-        if(ControlCursor(&c) == 'q') break;
-        MoveCursor(&c, &menu);
+        input = ControlCursor(&c);
+        //debug-start//
+        fp = fopen("debug.txt","w");
+        fprintf(fp,"input:%c, px:%lf,py:%lf, mvinch: %c\n ",input,c.px,c.py,(mvinch(c.py, c.px) & A_CHARTEXT));
+        fclose(fp);
+        //debug-end//
+        if(input == 'q') break;
+        else if((input == 's') && ((mvinch(c.py, c.px) & A_CHARTEXT) == '*') ) break;
+        MoveCursor(&c);
 
         // 動作速度調節
         usleep(20000);
@@ -132,8 +146,6 @@ int main(void)
 	noecho();		// 入力されたキーを表示しない
 	cbreak();		// 入力バッファを使わない(Enter 不要の入力)
 	keypad(stdscr, TRUE);	// カーソルキーを使用可能にする
-
-    addstr("the position of this text is 2,5");
 
     /* 本体　*/
     MainScreen();
