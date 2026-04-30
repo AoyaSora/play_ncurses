@@ -8,30 +8,37 @@ typedef struct {
     double px, py; //Position(位置)
     double vx, vy; //Velocity(速度) 
 } Cobj;            // cursor object(カーソルの場所)
-
+/* イベントの構造体　*/
+typedef struct {
+    char whosCompo[20];     // どのUIコンポーネントに所属しているか
+    int x,y;            // '*'の場所 
+    char text[100];     // iventの内容
+    char bottonUI;      // '*'の形
+    char iventTo[20];       // イベントの遷移先
+}IventObj;
+/* イベント判定2D配列 */
+char iventPos[200][280]; // 全体でのイベントの場所管理
+// 使用例
+// IventObj MainToMenu ={"main",0,0,"Menu",'*',"menu"};
+// IventObj MenuToMemory = {"Menu",0,0,"Memory",'*',"memory"};
+// この時にUIコンポーネントのボタンカウントを増やして，
 /* UIの部品 外枠 */
 typedef struct {
     int x, y; // top left position
     int w, h; // width, height 
-    // button関係
-    int buttonNum,textMax;
-    char buttonUI;
-    char text[][];
-    // ivent
-    // '*'の場所とイベントを関連づける．どこかの判定式で場所を参照してイベントを発生させたい
 } UIobj;
+
 /* カーソルの初期化 */
 void InitCobj(Cobj *obj, double px,double py,double vx,double vy)
 {
     obj->px = px; obj->py = py;
     obj->vx = vx; obj->vy = vy;
 }
-/* UIの外枠の初期化　*/
+/* UIの外枠の初期化 */
 void InitUIobj(UIobj * obj, int x, int y, int w, int h)
 {
     obj->x = x; obj->y = y;
     obj->w = w; obj->h = h;
-
 }
 /* カーソルの構造体情報制御 キー入力　*/
 int ControlCursor(Cobj *obj)
@@ -72,7 +79,8 @@ void DrawUI(UIobj *obj)
 {
     int widthLine = obj->w - 2;
     int heightLine = obj->h -2;
-   
+    int textCol,textRow,textLen; //colが列 rowが行
+    int i,j;
     /* 枠　*/
     //左上
    move(obj->y,obj->x);
