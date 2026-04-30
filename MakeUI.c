@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <math.h>
+#include <stdio.h>
 /* カーソルの構造体　*/
 typedef struct {
     double px, py; //Position(位置)
@@ -37,6 +38,7 @@ int ControlCursor(Cobj *obj)
         case KEY_DOWN : obj->vy = 1.0; break;
         case KEY_LEFT : obj->vx = -1.0; break;
         case KEY_RIGHT : obj->vx = 1.0; break;
+        case ' ' : return ('s'); break;
         case 'q': case 'Q': case'\e': return ('q'); break;
         default : break;
 
@@ -49,8 +51,8 @@ void MoveCursor(Cobj *obj)
 {
 	int	w, h;
 	getmaxyx(stdscr, h, w);
-    if((obj->px + obj->vx >= 0) && (obj->px + obj->vx <= w-1 ) && (mvinch(obj->py,obj->px + obj->vx)& A_CHARTEXT) == ' ') obj->px += obj->vx;
-    if((obj->py + obj->vy >= 0) && (obj->py + obj->vy <= h-1 ) &&( mvinch(obj->py + obj->vy, obj->px) & A_CHARTEXT) == ' ') obj->py += obj->vy;
+    if((obj->px + obj->vx >= 0) && (obj->px + obj->vx <= w-1 ) && (mvinch(obj->py, obj->px + obj->vx) & A_CHARTEXT) == ' ' || (mvinch(obj->py, obj->px + obj->vx) & A_CHARTEXT) == '*') obj->px += obj->vx;
+    if((obj->py + obj->vy >= 0) && (obj->py + obj->vy <= h-1 ) && (mvinch(obj->py + obj->vy, obj->px) & A_CHARTEXT) == ' ' || (mvinch(obj->py + obj->vy, obj->px) & A_CHARTEXT) =='*') obj->py += obj->vy;
 }
 /* カーソルの表示　*/
 void DrawCursor(Cobj *obj)
@@ -94,6 +96,9 @@ void DrawUI(UIobj *obj)
    }
    //右下
    addch('+');
+   // '*'表示
+   move( obj->y + 3, obj->x +3 );
+   addch('*');
 }
 
 void MainScreen()
@@ -101,6 +106,8 @@ void MainScreen()
     Cobj c;
     UIobj menu;
     int w,h;
+    char input;
+    FILE *fp;
 
     //初期設定
     getmaxyx(stdscr, h, w);
@@ -109,12 +116,19 @@ void MainScreen()
     while(1){
         erase();
         refresh();
-        InitUIobj(&menu,0,0,10,10);
+        InitUIobj(&menu,0,0,w,h);
         DrawUI(&menu);
         DrawCursor(&c);
 
         // キー入力
-        if(ControlCursor(&c) == 'q') break;
+        input = ControlCursor(&c);
+        //debug-start//
+        fp = fopen("debug.txt","w");
+        fprintf(fp,"input:%c, px:%lf,py:%lf, mvinch: %c\n ",input,c.px,c.py,(mvinch(c.py, c.px) & A_CHARTEXT));
+        fclose(fp);
+        //debug-end//
+        if(input == 'q') break;
+        else if((input == 's') && ((mvinch(c.py, c.px) & A_CHARTEXT) == '*') ) break;
         MoveCursor(&c);
 
         // 動作速度調節
