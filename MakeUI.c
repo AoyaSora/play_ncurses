@@ -13,6 +13,12 @@ typedef struct {
 typedef struct {
     int x, y; // top left position
     int w, h; // width, height 
+    // button関係
+    int buttonNum,textMax;
+    char buttonUI;
+    char text[][];
+    // ivent
+    // '*'の場所とイベントを関連づける．どこかの判定式で場所を参照してイベントを発生させたい
 } UIobj;
 /* カーソルの初期化 */
 void InitCobj(Cobj *obj, double px,double py,double vx,double vy)
@@ -97,6 +103,14 @@ void DrawUI(UIobj *obj)
    //右下
    addch('+');
    // '*'表示
+   /*  
+   制限: UIの外枠を作成したのちボタンやテキストを描画するので幅が大きすぎると溢れちゃう
+   1.横方向で行数が足りるかを算出
+   whileで治るように書く．改行時に*と同じ列にtextを入れたくないから計算式を変える
+   使用行数tmpを更新
+    (* + space+ text) < widthLineなら1行，以上なら(* + space+ text) - widthLine L widthLine
+    2.縦方向の使用行数がheightLine以内ならok．以上ならerrorとして出力
+   */
    move( obj->y + 3, obj->x +3 );
    addch('*');
 }
