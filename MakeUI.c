@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
+#include <string.h>
 /* カーソルの構造体　*/
 typedef struct {
     double px, py; //Position(位置)
@@ -18,14 +19,13 @@ typedef struct {
 }IventObj;
 /* イベント判定2D配列 */
 char iventPos[200][280]; // 全体でのイベントの場所管理
-// 使用例
-// IventObj MainToMenu ={"main",0,0,"Menu",'*',"menu"};
-// IventObj MenuToMemory = {"Menu",0,0,"Memory",'*',"memory"};
-// この時にUIコンポーネントのボタンカウントを増やして，
+
 /* UIの部品 外枠 */
 typedef struct {
     int x, y; // top left position
     int w, h; // width, height 
+    int bottonNum; // nubmer of botton
+    char iventText[10][100]; // Text of botton maxbotton = 10, max text each botton = 99 
 } UIobj;
 
 /* カーソルの初期化 */
@@ -35,10 +35,16 @@ void InitCobj(Cobj *obj, double px,double py,double vx,double vy)
     obj->vx = vx; obj->vy = vy;
 }
 /* UIの外枠の初期化 */
-void InitUIobj(UIobj * obj, int x, int y, int w, int h)
+// char* text[] = {"start","option","menory"}
+void InitUIobj(UIobj * obj, int x, int y, int w, int h, int bn, char* text[])
 {
     obj->x = x; obj->y = y;
     obj->w = w; obj->h = h;
+    obj->bottonNum = bn;
+    for(int i=0; i < obj->bottonNum; i++){
+        strncpy(obj->iventText[i],text[i],99);
+        obj->iventText[i][99] = '\0';
+    }
 }
 /* カーソルの構造体情報制御 キー入力　*/
 int ControlCursor(Cobj *obj)
@@ -75,12 +81,11 @@ void DrawCursor(Cobj *obj)
 }
 
 /* 引数で左上のxyと幅，高さを受け取る　*/
-void DrawUI(UIobj *obj)
+void DrawUI(UIobj *obj, char ButtonPos[][280])
 {
     int widthLine = obj->w - 2;
     int heightLine = obj->h -2;
-    int textCol,textRow,textLen; //colが列 rowが行
-    int i,j;
+    int textCol,textRow; //colが列 rowが行
     /* 枠　*/
     //左上
    move(obj->y,obj->x);
@@ -110,17 +115,86 @@ void DrawUI(UIobj *obj)
    }
    //右下
    addch('+');
-   // '*'表示
-   /*  
-   制限: UIの外枠を作成したのちボタンやテキストを描画するので幅が大きすぎると溢れちゃう
-   1.横方向で行数が足りるかを算出
-   whileで治るように書く．改行時に*と同じ列にtextを入れたくないから計算式を変える
-   使用行数tmpを更新
-    (* + space+ text) < widthLineなら1行，以上なら(* + space+ text) - widthLine L widthLine
-    2.縦方向の使用行数がheightLine以内ならok．以上ならerrorとして出力
-   */
-   move( obj->y + 3, obj->x +3 );
-   addch('*');
+
+   // ivent表示 引数に当たり判定用の2dマトリクスを入れれば他のとこでも使える
+   // '*' と iventTextを表示
+   int ln = 0; // ボタンの行指定用
+   int lnAdd = 0; //iventひとつ分の行数
+   int averageLn = heightLine/obj->bottonNum; //均等にボタンを配置する用
+   int textStartWidth = obj->x + 3;
+   int c = 0; // textの描画x位置
+   int bottonPos[heightLine][widthLine]; // 中身の配列
+
+   int lnNum=0;
+   int overAveLen = 1; // 1 = true 
+   int bottonHeight[obj->bottonNum];
+   //計算
+   bottonHeight[0] = 0;
+   for(int i=0; i < obj->bottonNum; i++){ //ボタンの数繰り返し
+        //文字の数取得し，合計行数がheightLine数を超えないか
+        int textlen = strlen(obj->iventText[i]);
+        int rowNum = (textlen / (widthLine-2));
+        if(textlen % (widthLine-2) != 0) {
+            rowNum+=1;
+            // mvprintw(9+i,5,"textlen: %d,widthLine-2: %d rowNum:%d",textlen,(widthLine-2),rowNum);
+        }
+        if(i < obj->bottonNum -1) { 
+            bottonHeight[i+1] = bottonHeight[i] + rowNum;
+            mvprintw(10+i,5,"bottonheihg: %d",bottonHeight[i+1]);
+        }
+        lnNum += rowNum;
+        if(averageLn < rowNum) overAveLen = 0;
+    }
+    // mvprintw(10, 5, "orverAveLen: %d,lnNum: %d, heightLine: %d", overAveLen,lnNum,heightLine); // 10行5列目に表示
+    // mvprintw(11,5,"bottonHeight[0]: %d,bottonHeigh[1]: %d",bottonHeight[0],bottonHeight[1]);
+    if(overAveLen == 1){ //均等における場合(それぞれがaveを超えていないのでそのまま描画できる)
+        bottonHeight[0]=1;
+        for(int n=1;n < obj->bottonNum;n++) bottonHeight[n] = bottonHeight[n-1] + averageLn;
+        //描画
+        mvaddch(0,0,'a');
+        // mvprintw(10, 5, "orverAveLen: %d,lnNum: %d, heightLine: %d", overAveLen,lnNum,heightLine); // 10行5列目に表示
+        for(int i=0; i < obj->bottonNum; i++){
+            //ボタン描画
+            mvaddch( obj->y+bottonHeight[i], obj->x+1, '*');
+            ButtonPos[obj->y+bottonHeight[i]][obj->x+1] = '*'; //共通の配列にボタンを追加
+            // c = 0;
+            // //text描画
+            int len = strlen(obj->iventText[i]);
+            int row = obj->y + bottonHeight[i];
+            int col = textStartWidth;
+            for(int j=0;j < len; j++){
+                mvaddch(row,col,obj->iventText[i][j]);
+                if( col > (obj->w) ) {  // 2 = '*' + ' '
+                    // textがUIの外枠'|'にかなったら改行
+                    col = textStartWidth;
+                    row +=1;
+                }else col++;
+            }
+        }
+    }else if(overAveLen != 1 && lnNum <= heightLine){ //均等におけないがui中に描画できる
+        //描画
+        // bottonHeight[0] = 1;
+        mvaddch(1,0,'b');
+        for(int i=0; i < obj->bottonNum; i++){
+            //ボタン描画
+            mvaddch( obj->y+bottonHeight[i]+1, obj->x+1, '*');
+            ButtonPos[obj->y+bottonHeight[i]+1][obj->x+1] = '*'; //共通の配列にボタンを追加
+            //text描画
+            int len = strlen(obj->iventText[i]);
+            int row = obj->y + bottonHeight[i] + 1;
+            int col = textStartWidth;
+            for(int j=0;j < len; j++){
+                mvaddch(row,col,obj->iventText[i][j]);
+                if( col > (obj->w)) {  // 2 = '*' + ' '
+                    // textがUIの外枠'|'にかなったら改行
+                    col = textStartWidth;
+                    row +=1;
+                }else col++;
+            }
+        }
+    }else{  // そのままやるとオーバーする場合 
+        mvaddch(0,0,'c');
+    }
 }
 
 void MainScreen()
@@ -130,7 +204,7 @@ void MainScreen()
     int w,h;
     char input;
     FILE *fp;
-
+    char *MainText[] = {"start the lainbow another way","next situation xxx"};
     //初期設定
     getmaxyx(stdscr, h, w);
     InitCobj(&c,(double)w/2.0, (double)h/2.0, 0.0, 0.0);
@@ -138,8 +212,9 @@ void MainScreen()
     while(1){
         erase();
         refresh();
-        InitUIobj(&menu,0,0,w,h);
-        DrawUI(&menu);
+        
+        InitUIobj(&menu,3,3,20,10,2,MainText);
+        DrawUI(&menu,iventPos);
         DrawCursor(&c);
 
         // キー入力
