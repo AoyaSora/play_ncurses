@@ -6,7 +6,7 @@
 #include <string.h>
 /* カーソルの構造体　*/
 typedef struct {
-    double px, py; //Position(位置)
+    int px, py; //Position(位置)
     double vx, vy; //Velocity(速度) 
 } Cobj;            // cursor object(カーソルの場所)
 /* イベントの構造体　*/
@@ -201,31 +201,35 @@ void MainScreen()
 {
     Cobj c;
     UIobj menu;
+    // UIobj test;
     int w,h;
     char input;
     FILE *fp;
     char *MainText[] = {"start the lainbow another way","next situation xxx"};
     //初期設定
     getmaxyx(stdscr, h, w);
-    InitCobj(&c,(double)w/2.0, (double)h/2.0, 0.0, 0.0);
+    // InitCobj(&c,(double)w/2.0, (double)h/2.0, 0.0, 0.0);
+    InitCobj(&c,4,4, 0.0, 0.0);
     timeout(0);
     while(1){
         erase();
         refresh();
         
         InitUIobj(&menu,3,3,20,10,2,MainText);
+        // InitUIobj(&test,24,14,20,10,2,MainText);
         DrawUI(&menu,iventPos);
+        // DrawUI(&test,iventPos);
         DrawCursor(&c);
 
         // キー入力
         input = ControlCursor(&c);
         //debug-start//
-        fp = fopen("debug.txt","w");
-        fprintf(fp,"input:%c, px:%lf,py:%lf, mvinch: %c\n ",input,c.px,c.py,(mvinch(c.py, c.px) & A_CHARTEXT));
-        fclose(fp);
+        // fp = fopen("debug.txt","w");
+        // fprintf(fp,"input:%c, px:%lf,py:%lf, mvinch: %c\n ",input,c.px,c.py,(mvinch(c.py, c.px) & A_CHARTEXT));
+        // fclose(fp);
         //debug-end//
         if(input == 'q') break;
-        else if((input == 's') && ((mvinch(c.py, c.px) & A_CHARTEXT) == '*') ) break;
+        else if((input == 's') && (iventPos[(int)c.py][(int)c.px] == '*') ) break;
         MoveCursor(&c);
 
         // 動作速度調節
