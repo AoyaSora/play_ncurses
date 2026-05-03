@@ -149,7 +149,7 @@ void DrawUI(UIobj *obj, char ButtonPos[][280], iventObj* ivent)
    bottonHeight[0] = 0;
    for(int i=0; i < obj->bottonNum; i++){ //ボタンの数繰り返し
         //文字の数取得し，合計行数がheightLine数を超えないか
-        int textlen = strlen(obj->iventText[i]);
+        int textlen = strlen(ivent[i].text);
         int rowNum = (textlen / (widthLine-2));
         if(textlen % (widthLine-2) != 0) {
             rowNum+=1;
