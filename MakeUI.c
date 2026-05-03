@@ -9,16 +9,17 @@ typedef struct {
     int px, py; //Position(位置)
     double vx, vy; //Velocity(速度) 
 } Cobj;            // cursor object(カーソルの場所)
+
+/* イベント判定2D配列 */
+unsigned long iventPos[200][280]; // 全体でのイベントの場所管理
+
 /* イベントの構造体　*/
 typedef struct {
-    char whosCompo[20];     // どのUIコンポーネントに所属しているか
-    int x,y;            // '*'の場所 
-    char text[100];     // iventの内容
-    char bottonUI;      // '*'の形
-    char iventTo[20];       // イベントの遷移先
-}IventObj;
-/* イベント判定2D配列 */
-char iventPos[200][280]; // 全体でのイベントの場所管理
+    unsigned long x,y; // ボタンの場所
+    char text[100];     // イベント用のテキスト
+    unsigned long nextState[10]; // 次のイベント内容
+} iventObj; // nextStateの内容をiventPosに入れる
+
 
 /* UIの部品 外枠 */
 typedef struct {
@@ -26,6 +27,7 @@ typedef struct {
     int w, h; // width, height 
     int bottonNum; // nubmer of botton
     char iventText[10][100]; // Text of botton maxbotton = 10, max text each botton = 99 
+    iventObj ivent[10]; // ivent object 
 } UIobj;
 
 /* カーソルの初期化 */
@@ -35,15 +37,14 @@ void InitCobj(Cobj *obj, double px,double py,double vx,double vy)
     obj->vx = vx; obj->vy = vy;
 }
 /* UIの外枠の初期化 */
-// char* text[] = {"start","option","menory"}
-void InitUIobj(UIobj * obj, int x, int y, int w, int h, int bn, char* text[])
+void InitUIobj(UIobj * obj, int x, int y, int w, int h, int bn, iventObj *ivent)
 {
     obj->x = x; obj->y = y;
     obj->w = w; obj->h = h;
     obj->bottonNum = bn;
     for(int i=0; i < obj->bottonNum; i++){
-        strncpy(obj->iventText[i],text[i],99);
-        obj->iventText[i][99] = '\0';
+        ivent[i].text[99] = '\0';
+        obj->ivent[i] = ivent[i];
     }
 }
 /* カーソルの構造体情報制御 キー入力　*/
@@ -80,8 +81,8 @@ void DrawCursor(Cobj *obj)
     addch('>');
 }
 
-/* 引数で左上のxyと幅，高さを受け取る　*/
-void DrawUI(UIobj *obj, char ButtonPos[][280])
+/* 引数で左上のxyと幅，高さ,共有用のボタン配列を受け取る　*/
+void DrawUI(UIobj *obj, unsigned long ButtonPos[][280], iventObj* ivent)
 {
     int widthLine = obj->w - 2;
     int heightLine = obj->h -2;
@@ -123,7 +124,7 @@ void DrawUI(UIobj *obj, char ButtonPos[][280])
    int averageLn = heightLine/obj->bottonNum; //均等にボタンを配置する用
    int textStartWidth = obj->x + 3;
    int c = 0; // textの描画x位置
-   int bottonPos[heightLine][widthLine]; // 中身の配列
+//    int bottonPos[heightLine][widthLine]; // 中身の配列
 
    int lnNum=0;
    int overAveLen = 1; // 1 = true 
@@ -156,7 +157,7 @@ void DrawUI(UIobj *obj, char ButtonPos[][280])
         for(int i=0; i < obj->bottonNum; i++){
             //ボタン描画
             mvaddch( obj->y+bottonHeight[i], obj->x+1, '*');
-            ButtonPos[obj->y+bottonHeight[i]][obj->x+1] = '*'; //共通の配列にボタンを追加
+            ButtonPos[obj->y+bottonHeight[i]][obj->x+1] = 1; //共通の配列にボタンを追加
             // c = 0;
             // //text描画
             int len = strlen(obj->iventText[i]);
@@ -178,7 +179,7 @@ void DrawUI(UIobj *obj, char ButtonPos[][280])
         for(int i=0; i < obj->bottonNum; i++){
             //ボタン描画
             mvaddch( obj->y+bottonHeight[i]+1, obj->x+1, '*');
-            ButtonPos[obj->y+bottonHeight[i]+1][obj->x+1] = '*'; //共通の配列にボタンを追加
+            ButtonPos[obj->y+bottonHeight[i]+1][obj->x+1] = 1; //共通の配列にボタンを追加
             //text描画
             int len = strlen(obj->iventText[i]);
             int row = obj->y + bottonHeight[i] + 1;
@@ -205,18 +206,26 @@ void MainScreen()
     int w,h;
     char input;
     FILE *fp;
-    char *MainText[] = {"start the lainbow another way","next situation xxx"};
+    // char *MainText[] = {"start the lainbow another way","next situation xxx"};
     //初期設定
     getmaxyx(stdscr, h, w);
     // InitCobj(&c,(double)w/2.0, (double)h/2.0, 0.0, 0.0);
     InitCobj(&c,4,4, 0.0, 0.0);
+
+    //構造体の初期化
+    iventObj iventData[2] = {
+        {0, 0, "start the lainbow another way","state1"},
+        {0, 0, "next situation xxx", "state2"}
+    };
+    // 文字列を入れるときはstrcpy
+
     timeout(0);
     while(1){
         erase();
         refresh();
         
-        InitUIobj(&menu,3,3,20,10,2,MainText);
-        // InitUIobj(&test,24,14,20,10,2,MainText);
+        // InitUIobj(&menu,3,3,20,10,2,MainText);
+        InitUIobj(&menu,24,14,20,10,2, iventData);
         DrawUI(&menu,iventPos);
         // DrawUI(&test,iventPos);
         DrawCursor(&c);
@@ -229,7 +238,9 @@ void MainScreen()
         // fclose(fp);
         //debug-end//
         if(input == 'q') break;
-        else if((input == 's') && (iventPos[(int)c.py][(int)c.px] == '*') ) break;
+        else if((input == 's') && (iventPos[(int)c.py][(int)c.px] == 1) ){
+           break;
+        } 
         MoveCursor(&c);
 
         // 動作速度調節
