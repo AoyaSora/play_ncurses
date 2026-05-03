@@ -4,6 +4,13 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+/* 画面の種類　*/
+enum {
+    END, // 0: 終了
+    MAIN, // 1: メイン
+    TO_DO,// 2: todoリスト
+    RECORD// 3: 記録
+};
 /* カーソルの構造体　*/
 typedef struct {
     int px, py; //Position(位置)
@@ -229,7 +236,6 @@ int MainScreen()
 
 
     //初期設定
-    getmaxyx(stdscr, h, w);
     InitCobj(&c,4,4, 0.0, 0.0);
 
     //構造体の初期化
@@ -242,11 +248,11 @@ int MainScreen()
     while(1){
         erase();
         refresh();
-        
-        InitUIobj(&menu,3,3,20,10,2,iventData);
+            getmaxyx(stdscr, h, w);
+
+        InitUIobj(&menu,0,0,w,h,2,iventData);
         DrawUI(&menu,iventPos,iventData);
         DrawCursor(&c);
-        unsigned long test=100;
         // キー入力
         input = ControlCursor(&c);
         if (input == 'q') return END;
@@ -254,35 +260,64 @@ int MainScreen()
                if(iventPos[c.py][c.px] == '*') {
                 for(int i = 0; i < sizeof(iventData)/sizeof(iventData[0]); i++ ) {
                     if(iventData[i].x == c.px && iventData[i].y == c.py){
-                        // unsigned long state = iventData[i].nextState;
-                        // switch(state) {
-                        //     case TO_DO:
-                        //         return TO_DO;
-                        //     case END:
-                        //         return END;
-                        //     default: return END;
-                        // }
-                        // 上のはしたのと同じ
                         return iventData[i].nextState;
                     }
                 }
             }
         }
         MoveCursor(&c);
-
         // 動作速度調節
         usleep(20000);
     }
     return 0;
 }
+int TO_DOScreen(){
+    Cobj c;
+    UIobj todoUI;
+    int w,h;
+    char input;
 
-/* 画面の種類　*/
-enum {
-    END, // 0: 終了
-    MAIN, // 1: メイン
-    TO_DO,// 2: todoリスト
-    RECORD// 3: 記録
-};
+
+    //初期設定
+    getmaxyx(stdscr, h, w);
+    InitCobj(&c,4,4, 0.0, 0.0);
+
+    //構造体の初期化
+    iventObj iventData[3] = {
+        {0, 0, "push up 3set * 15",TO_DO},
+        {0, 0, "go to main", MAIN},
+        {0,0, "end", END}
+    };
+
+    timeout(0);
+    while(1){
+        erase();
+        refresh();
+        
+        InitUIobj(&todoUI,0,0,w,h,3,iventData);
+        DrawUI(&todoUI,iventPos,iventData);
+        DrawCursor(&c);
+        // キー入力
+        input = ControlCursor(&c);
+        if (input == 'q') return END;
+        else if(input == 's'){
+               if(iventPos[c.py][c.px] == '*') {
+                for(int i = 0; i < sizeof(iventData)/sizeof(iventData[0]); i++ ) {
+                    if(iventData[i].x == c.px && iventData[i].y == c.py){
+                        return iventData[i].nextState;
+                    }
+                }
+            }
+        }
+        MoveCursor(&c);
+        // 動作速度調節
+        usleep(20000);
+    }
+    return 0;
+
+}
+
+
 int main(void)
 {
     /* curses の設定 */
@@ -301,7 +336,7 @@ int main(void)
                 nextScreen = MainScreen();
                 break;
             case TO_DO:
-                nextScreen = MainScreen();
+                nextScreen = TO_DOScreen();
                 break;
             case RECORD:
                 break;
