@@ -1,2 +1,2 @@
-input:q, px:3.000000,py:3.000000, mvinch: >
+input:q, px:67.500000,py:8.000000, mvinch: >
  
