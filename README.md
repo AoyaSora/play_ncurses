@@ -1,8 +1,9 @@
 # play_ncurses
 ### added feature
 - move '>' charactor by KEY
-- made frame of UI function 
+- made frame of UI function
+- event when '>' reaches '*' and press space key
+- made sqlite function
 
-### next feature
-- UIフレームへの当たり判定
-- '>'を特定の場所に移動させエンターを押したら変化させる入力機能
+### next task
+- use sqlite in main.c

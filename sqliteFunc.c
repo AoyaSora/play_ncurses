@@ -1,91 +1,12 @@
 #include<stdio.h>
-#include<sqlite3.h>
-typedef struct {
-    const char *date;
-    const char *title;
-    const char *content;
-    const char *created_at;
-    const char *updated_at;
-} DiaryObj;
-typedef struct {
-    const char *date;
-    const char *task;
-    int status;
-} ToDoObj;
-int createTable(sqlite3 *db, const char* tableName, const char* columns);
-int insertDiaryTable(sqlite3* db, const DiaryObj *d);
-int insertToDoTable(sqlite3* db, ToDoObj *t);
-int updateDiary(sqlite3* db,int id, const char*title, const char* content, const char* updated_at);
-int updateToDo(sqlite3* db, int id, const char*date, const char* task, int status);
-int updateToDoStatus(sqlite3* db, int id,int status);
-int deleteDiaryByID(sqlite3* db, int id);
-int deleteTodoByID(sqlite3* db,int id);
+#include "sqliteFunc.h"
+
 static int callback(void* NotUsed, int argc, char** argv, char** azColName){
     int i;
     for(int i = 0; i<argc; i++){
         printf("%s=%s\n",azColName[i],argv[i]?argv[i]:"NULL");
     }
     printf("\n");
-    return 0;
-}
-
-int main(void){
-    sqlite3* db;
-    char* zErrMsg = 0;
-    int rc;
-    // DiaryObjectの作成
-    DiaryObj d = {
-        "2026/05/5",
-        "タイトル:ガンバ",
-        "今日の中身",
-        "20:20",
-        "20:40"
-    };
-    ToDoObj t = {
-        "2026/05/5",
-        "英語勉強 25min"
-    };
-
-    // if(argc!=3){
-    //     fprintf(stderr,"Usage%s DATABASE SQL-STATEMENT\n", argv[0]);
-    //     return (1);
-    // }
-    // sqlite3_open( データベースファイル名,db接続オブジェクト)
-    rc = sqlite3_open("testDB.db",&db);
-    if(rc){
-        fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(db));
-        sqlite3_close(db);
-        return(1);
-    }
-
-    // create table
-    rc = createTable(db,"toDo","id INTEGER PRIMARY KEY, date TEXT, task TEXT, status INTEGER");
-    if(rc!=SQLITE_OK){
-        fprintf(stderr,"createTable failed: %d\n",rc);
-        return(1);
-    }
-    rc = createTable(db,"diary","id INTEGER PRIMARY KEY, date TEXT, title TEXT, content TEXT, created_at TEXT, updated_at TEXT");
-    if(rc!=SQLITE_OK){
-        fprintf(stderr,"createTable failed: %d\n",rc);
-        return(1);
-    }
-
-    // insert
-    // rc = insertDiaryTable(db,&d);
-    // if(rc!=SQLITE_DONE){
-    //     fprintf(stderr,"insertDiaryTable failed: %d\n",rc);
-    //     return(1);
-    // }
-    // rc = insertToDoTable(db,&t);
-    // if(rc!=SQLITE_DONE){
-    //     fprintf(stderr,"insertDiaryTable failed: %d\n",rc);
-    //     return(1);
-    // }
-    updateDiary(db,1,"根性の叩き","全てはパワー","ここ今の時間とりたいね");
-    updateToDo(db,1,"ノー勉","うんちぶり",2);
-    updateToDoStatus(db,1,1);
-
-    sqlite3_close(db);
     return 0;
 }
 
