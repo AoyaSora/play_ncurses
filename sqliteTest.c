@@ -15,6 +15,7 @@ typedef struct {
 
 int createTable(sqlite3 *db, const char* tableName, const char* columns);
 int insertDiaryTable(sqlite3* db, const DiaryObj *d);
+int insertToDoTable(sqlite3* db, ToDoObj *t);
 
 static int callback(void* NotUsed, int argc, char** argv, char** azColName){
     int i;
@@ -29,6 +30,18 @@ int main(void){
     sqlite3* db;
     char* zErrMsg = 0;
     int rc;
+    // DiaryObjectの作成
+    DiaryObj d = {
+        "2026/05/5",
+        "タイトル:ガンバ",
+        "今日の中身",
+        "20:20",
+        "20:40"
+    };
+    ToDoObj t = {
+        "2026/05/5",
+        "英語勉強 25min"
+    };
 
     // if(argc!=3){
     //     fprintf(stderr,"Usage%s DATABASE SQL-STATEMENT\n", argv[0]);
@@ -46,14 +59,25 @@ int main(void){
     rc = createTable(db,"toDo","id INTEGER PRIMARY KEY, date TEXT, task TEXT, status INTEGER");
     if(rc!=SQLITE_OK){
         fprintf(stderr,"createTable failed: %d\n",rc);
+        return(1);
     }
     rc = createTable(db,"diary","id INTEGER PRIMARY KEY, date TEXT, title TEXT, content TEXT, created_at TEXT, updated_at TEXT");
     if(rc!=SQLITE_OK){
         fprintf(stderr,"createTable failed: %d\n",rc);
+        return(1);
     }
 
     // insert
-
+    rc = insertDiaryTable(db,&d);
+    if(rc!=SQLITE_DONE){
+        fprintf(stderr,"insertDiaryTable failed: %d\n",rc);
+        return(1);
+    }
+    rc = insertToDoTable(db,&t);
+    if(rc!=SQLITE_DONE){
+        fprintf(stderr,"insertDiaryTable failed: %d\n",rc);
+        return(1);
+    }
 
     sqlite3_close(db);
     return 0;
@@ -115,13 +139,6 @@ int insertDiaryTable(sqlite3* db, const DiaryObj *d){
    使用するとしたらsqlite3_bind_int,sqlite3_bind_textぐらい?
    第五引数 : 3番目のパラメータによって参照されるオブジェクトの有効期間を制御または示す．
    */
-    //以下のような内容をforで回している
-    // sqlite3_bind_text(stmt,1,"2026/5/5",-1,SQLITE_STATIC);
-    // sqlite3_bind_text(stmt,2,"バク転の進捗とtoDoの結果",-1,SQLITE_STATIC);
-    // sqlite3_bind_text(stmt,3,"いいかんじ，後ろにジャンプして空中でブリッジをする感覚でやるといいかも．",-1,SQLITE_STATIC);
-    // sqlite3_bind_text(stmt,4,"20:23",-1,SQLITE_STATIC);
-    // sqlite3_bind_text(stmt,5,"20:40",-1,SQLITE_STATIC);
-
     // sqlite3_prepare_v2() -> sqlite3_bind_text() -> sqlite3_step(stmt) -> sqlite3_finalize(stmt)
 }
 
@@ -142,3 +159,8 @@ int insertToDoTable(sqlite3* db, ToDoObj *t){
     sqlite3_finalize(stmt);
     return rc;
 }
+
+// update
+int update
+
+// delete
