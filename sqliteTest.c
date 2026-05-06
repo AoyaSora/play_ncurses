@@ -1,7 +1,20 @@
 #include<stdio.h>
 #include<sqlite3.h>
+typedef struct {
+    const char *date;
+    const char *title;
+    const char *content;
+    const char *created_at;
+    const char *updated_at;
+} DiaryObj;
+typedef struct {
+    const char *date;
+    const char *task;
+    int status;
+} ToDoObj;
 
 int createTable(sqlite3 *db, const char* tableName, const char* columns);
+int insertDiaryTable(sqlite3* db, const DiaryObj *d);
 
 static int callback(void* NotUsed, int argc, char** argv, char** azColName){
     int i;
@@ -34,6 +47,13 @@ int main(void){
     if(rc!=SQLITE_OK){
         fprintf(stderr,"createTable failed: %d\n",rc);
     }
+    rc = createTable(db,"diary","id INTEGER PRIMARY KEY, date TEXT, title TEXT, content TEXT, created_at TEXT, updated_at TEXT");
+    if(rc!=SQLITE_OK){
+        fprintf(stderr,"createTable failed: %d\n",rc);
+    }
+
+    // insert
+
 
     sqlite3_close(db);
     return 0;
@@ -56,7 +76,7 @@ int createTable(sqlite3 *db, const char* tableName, const char* columns){
     return SQLITE_OK;
 }
 
-int insertDiaryTable(sqlite3* db, const char* values[]){
+int insertDiaryTable(sqlite3* db, const DiaryObj *d){
     sqlite3_stmt* stmt;
     const char* sql = "INSERT INTO diary(date,title,content,created_at,updated_at) VALUES (?,?,?,?,?);";
     int rc;
@@ -65,14 +85,17 @@ int insertDiaryTable(sqlite3* db, const char* values[]){
     rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
     if(rc!= SQLITE_OK) return rc;
     
-    // bindで'?'に挿入
-    for(int i=0; i< 5; i++){
-        sqlite3_bind_text(stmt,i+1,values[i],-1,SQLITE_STATIC);
-    }
+    // bindで'?'に挿入   
+    sqlite3_bind_text(stmt, 1, d->date, -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2, d->title, -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 3, d->content, -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 4, d->created_at, -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 5, d->updated_at, -1, SQLITE_STATIC);
+
     
     // step実行
     rc = sqlite3_step(stmt);// ここでのエラーは関数を使用するときに書く．
-    
+
     // 後処理
     sqlite3_finalize(stmt);
     return rc;
@@ -100,4 +123,22 @@ int insertDiaryTable(sqlite3* db, const char* values[]){
     // sqlite3_bind_text(stmt,5,"20:40",-1,SQLITE_STATIC);
 
     // sqlite3_prepare_v2() -> sqlite3_bind_text() -> sqlite3_step(stmt) -> sqlite3_finalize(stmt)
+}
+
+int insertToDoTable(sqlite3* db, ToDoObj *t){
+    sqlite3_stmt* stmt;
+    const char* sql = "INSERT INTO toDo(date,task,status) VALUES (?,?,?)";
+    int rc;
+
+    rc = sqlite3_prepare_v2(db,sql,-1,&stmt,NULL);
+    if(rc!= SQLITE_OK) return rc;
+
+    sqlite3_bind_text(stmt, 1,  t->date, -1,SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2, t->task, -1,SQLITE_STATIC);
+    sqlite3_bind_int(stmt,3, t->status);
+
+    rc = sqlite3_step(stmt);
+
+    sqlite3_finalize(stmt);
+    return rc;
 }
