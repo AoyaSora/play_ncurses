@@ -161,6 +161,92 @@ int insertToDoTable(sqlite3* db, ToDoObj *t){
 }
 
 // update
-int update
+/*
+UPDATE table SET 変更内容 WHERE 条件;
+idでtitle,content,updated_atを変更している
+*/
+int updateDiary(sqlite3* db,int id, const char*title, const char* content, const char* updated_at) {
+    sqlite3_stmt* stmt;
+    const char* sql = "UPDATE diary SET title=?, content=?, updated_at=? WHERE id=?;";
+    int rc;
+
+    rc = sqlite3_prepare_v2(db,sql,-1,&stmt,NULL);
+    if(rc!=SQLITE_OK) return rc;
+
+    sqlite3_bind_text(stmt, 1, title,-1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2, content,-1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 3, updated_at,-1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 4, id);
+
+    rc = sqlite3_step(stmt);
+
+    sqlite3_finalize(stmt);
+    return rc;
+}
+
+int updateToDo(sqlite3* db, int id, const char*date, const char* task, int status){
+    sqlite3_stmt* stmt;
+    const char* sql = "UPDATE toDo SET date=?, task=?, status=? WHERE id=?;";
+    int rc;
+
+    rc = sqlite3_prepare_v2(db,sql,-1,&stmt,NULL);
+    if(rc!=SQLITE_OK) return rc;
+
+    sqlite3_bind_text(stmt, 1,date,-1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2,task,-1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 3,status);
+    sqlite3_bind_int(stmt, 4,id);
+
+    rc = sqlite3_step(stmt);
+
+    sqlite3_finalize(stmt);
+    return rc;
+}
+int updateToDoStatus(sqlite3* db, int id,int status){
+    sqlite3_stmt* stmt;
+    const char* sql = "UPDATE toDo SET status=? WHERE id=?;";
+    int rc;
+    rc = sqlite3_prepare_v2(db,sql,-1,&stmt,NULL);
+    if(rc!=SQLITE_OK) return rc;
+
+    sqlite3_bind_int(stmt, 1,status);
+    sqlite3_bind_int(stmt, 2,id);
+    
+    rc = sqlite3_step(stmt);
+
+    sqlite3_finalize(stmt);
+    return rc;
+}
 
 // delete
+// DELETE FROM テーブル名 WHERE 条件;
+int deleteDiaryByID(sqlite3* db, int id){
+    sqlite3_stmt* stmt;
+    const char* sql = "DELETE FROM diary WHERE id=?;";
+    int rc;
+
+    rc = sqlite3_prepare_v2(db,sql,-1,&stmt,NULL);
+    if(rc!=SQLITE_OK) return rc;
+
+    sqlite3_bind_int(stmt, 1,id);
+
+    rc = sqlite3_step(stmt);
+
+    sqlite3_finalize(stmt);
+    return rc;
+}
+int deleteTodoByID(sqlite3* db,int id){
+    sqlite3_stmt* stmt;
+    const char* sql = "DELETE FROM toDo WHERE id=?;";
+    int rc;
+
+    rc = sqlite3_prepare_v2(db,sql,-1,&stmt,NULL);
+    if(rc!=SQLITE_OK) return rc;
+
+    sqlite3_bind_int(stmt, 1,id);
+
+    rc = sqlite3_step(stmt);
+
+    sqlite3_finalize(stmt);
+    return rc;
+}
