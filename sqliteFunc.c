@@ -194,25 +194,15 @@ int selectDiaryByDate(sqlite3* db, DiaryObj* d){
         const unsigned char* text;  // qlite3_column_textの返り血がconst unsigned char*なのでこの型
         // 下のstrcpyでnullが入らないようにするための処理
         text= sqlite3_column_text(stmt,0);
-        if(text){
-            strcpy(d->date, (const char*)text);
-        }
+        if(text) snprintf(d->date, sizeof(d->date), "%s",text ? (const char*)text : "");        
         text = sqlite3_column_text(stmt,1);
-        if(text){
-            strcpy(d->title, (const char*)text);
-        }
+        if(text) snprintf(d->title, sizeof(d->title), "%s",text ? (const char*)text : "");        
         text= sqlite3_column_text(stmt,2);
-        if(text){
-            strcpy(d->content, (const char*)text);
-        }
+        if(text) snprintf(d->content, sizeof(d->content), "%s",text ? (const char*)text : "");        
         text = sqlite3_column_text(stmt,3);
-        if(text){
-            strcpy(d->created_at, (const char*)text);
-        }
+        if(text) snprintf(d->created_at, sizeof(d->created_at), "%s",text ? (const char*)text : "");        
         text = sqlite3_column_text(stmt,4);
-        if(text){
-            strcpy(d->updated_at, (const char*)text);
-        }
+        if(text) snprintf(d->updated_at, sizeof(d->updated_at), "%s",text ? (const char*)text : "");        
     }
     
     sqlite3_finalize(stmt);

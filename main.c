@@ -19,13 +19,13 @@ typedef struct {
 } Cobj;            // cursor object(カーソルの場所)
 
 /* イベント判定2D配列 */
-char iventPos[200][280]; // 全体でのイベントの場所管理  ボタンの検知用 '*'
+char eventPos[200][280]; // 全体でのイベントの場所管理  ボタンの検知用 '*'
 /*
-    if (iventPos[c.py][c.px] == '*'){
-        // ivent[]のそれぞれのx,yと合うか
+    if (eventPos[c.py][c.px] == '*'){
+        // event[]のそれぞれのx,yと合うか
         for(int i = 0; i < bn; i++){
-            if(ivent[i].px == c.px && ivent[i].py = c.py) {
-                int state = ivent[i].nextState;
+            if(event[i].px == c.px && event[i].py = c.py) {
+                int state = event[i].nextState;
                 switch(state) {
                     case END:
                         break;
@@ -42,7 +42,7 @@ typedef struct {
     unsigned long x,y; // ボタンの場所
     char text[100];     // イベント用のテキスト
     unsigned long nextState; // 次のイベント内容
-} iventObj; // nextStateの内容をiventPosに入れる
+} eventObj; // nextStateの内容をeventPosに入れる
 
 
 /* UIの部品 外枠 */
@@ -50,8 +50,8 @@ typedef struct {
     int x, y; // top left position
     int w, h; // width, height 
     int bottonNum; // nubmer of botton
-    char iventText[10][100]; // Text of botton maxbotton = 10, max text each botton = 99 
-    iventObj ivent[10]; // ivent object 
+    char eventText[10][100]; // Text of botton maxbotton = 10, max text each botton = 99 
+    eventObj event[10]; // event object 
 } UIobj;
 
 /* カーソルの初期化 */
@@ -61,14 +61,14 @@ void InitCobj(Cobj *obj, double px,double py,double vx,double vy)
     obj->vx = vx; obj->vy = vy;
 }
 /* UIの外枠の初期化 */
-void InitUIobj(UIobj * obj, int x, int y, int w, int h, int bn, iventObj *ivent)
+void InitUIobj(UIobj * obj, int x, int y, int w, int h,int bn, eventObj *event)
 {
     obj->x = x; obj->y = y;
     obj->w = w; obj->h = h;
     obj->bottonNum = bn;
     for(int i=0; i < obj->bottonNum; i++){
-        ivent[i].text[99] = '\0';
-        obj->ivent[i] = ivent[i];
+        event[i].text[99] = '\0';
+        obj->event[i] = event[i];
     }
 }
 /* カーソルの構造体情報制御 キー入力　*/
@@ -106,7 +106,7 @@ void DrawCursor(Cobj *obj)
 }
 
 /* 引数で左上のxyと幅，高さ,共有用のボタン配列を受け取る　*/
-void DrawUI(UIobj *obj, char ButtonPos[][280], iventObj* ivent)
+void DrawUI(UIobj *obj, char ButtonPos[][280], eventObj* event)
 {
     int widthLine = obj->w - 2;
     int heightLine = obj->h -2;
@@ -141,10 +141,10 @@ void DrawUI(UIobj *obj, char ButtonPos[][280], iventObj* ivent)
    //右下
    addch('+');
 
-   // ivent表示 引数に当たり判定用の2dマトリクスを入れれば他のとこでも使える
-   // '*' と iventTextを表示
+   // event表示 引数に当たり判定用の2dマトリクスを入れれば他のとこでも使える
+   // '*' と eventTextを表示
    int ln = 0; // ボタンの行指定用
-   int lnAdd = 0; //iventひとつ分の行数
+   int lnAdd = 0; //eventひとつ分の行数
    int averageLn = heightLine/obj->bottonNum; //均等にボタンを配置する用
    int textStartWidth = obj->x + 3;
    int c = 0; // textの描画x位置
@@ -157,7 +157,7 @@ void DrawUI(UIobj *obj, char ButtonPos[][280], iventObj* ivent)
    bottonHeight[0] = 0;
    for(int i=0; i < obj->bottonNum; i++){ //ボタンの数繰り返し
         //文字の数取得し，合計行数がheightLine数を超えないか
-        int textlen = strlen(ivent[i].text);
+        int textlen = strlen(event[i].text);
         int rowNum = (textlen / (widthLine-2));
         if(textlen % (widthLine-2) != 0) {
             rowNum+=1;
@@ -181,17 +181,17 @@ void DrawUI(UIobj *obj, char ButtonPos[][280], iventObj* ivent)
         for(int i=0; i < obj->bottonNum; i++){
             //ボタン描画
             mvaddch( obj->y+bottonHeight[i], obj->x+1, '*');
-            ButtonPos[obj->y+bottonHeight[i]][obj->x+1] = '*'; //共通の配列にボタンを追加
+            // ButtonPos[obj->y+bottonHeight[i]][obj->x+1] = '*'; //共通の配列にボタンを追加
             // iven管理
-            ivent[i].x = obj->x+1;
-            ivent[i].y = obj->y+ bottonHeight[i];
+            event[i].x = obj->x+1;
+            event[i].y = obj->y+ bottonHeight[i];
             // c = 0;
             // //text描画
-            int len = strlen(ivent[i].text);
+            int len = strlen(event[i].text);
             int row = obj->y + bottonHeight[i];
             int col = textStartWidth;
             for(int j=0;j < len; j++){
-                mvaddch(row,col,ivent[i].text[j]);
+                mvaddch(row,col,event[i].text[j]);
                 if( col > (obj->w) ) {  // 2 = '*' + ' '
                     // textがUIの外枠'|'にかなったら改行
                     col = textStartWidth;
@@ -206,16 +206,16 @@ void DrawUI(UIobj *obj, char ButtonPos[][280], iventObj* ivent)
         for(int i=0; i < obj->bottonNum; i++){
             //ボタン描画
             mvaddch( obj->y+bottonHeight[i]+1, obj->x+1, '*');
-            ButtonPos[obj->y+bottonHeight[i]+1][obj->x+1] = '*'; //共通の配列にボタンを追加
+            // ButtonPos[obj->y+bottonHeight[i]+1][obj->x+1] = '*'; //共通の配列にボタンを追加
             // iven管理
-            ivent[i].x = obj->x+1;
-            ivent[i].y = obj->y+ bottonHeight[i];
+            event[i].x = obj->x+1;
+            event[i].y = obj->y+ bottonHeight[i];
             //text描画
-            int len = strlen(obj->iventText[i]);
+            int len = strlen(obj->eventText[i]);
             int row = obj->y + bottonHeight[i] + 1;
             int col = textStartWidth;
             for(int j=0;j < len; j++){
-                mvaddch(row,col,obj->iventText[i][j]);
+                mvaddch(row,col,obj->eventText[i][j]);
                 if( col > (obj->w)) {  // 2 = '*' + ' '
                     // textがUIの外枠'|'にかなったら改行
                     col = textStartWidth;
@@ -240,7 +240,7 @@ int MainScreen()
     InitCobj(&c,4,4, 0.0, 0.0);
 
     //構造体の初期化
-    iventObj iventData[2] = {
+    eventObj eventData[2] = {
         {0, 0, "start the lainbow another way",TO_DO},
         {0, 0, "next situation xxx", END}
     };
@@ -251,20 +251,21 @@ int MainScreen()
         refresh();
             getmaxyx(stdscr, h, w);
 
-        InitUIobj(&menu,0,0,w,h,2,iventData);
-        DrawUI(&menu,iventPos,iventData);
+        InitUIobj(&menu,0,0,w,h,2,eventData);
+        DrawUI(&menu,eventPos,eventData);
         DrawCursor(&c);
         // キー入力
         input = ControlCursor(&c);
         if (input == 'q') return END;
         else if(input == 's'){
-               if(iventPos[c.py][c.px] == '*') {
-                for(int i = 0; i < sizeof(iventData)/sizeof(iventData[0]); i++ ) {
-                    if(iventData[i].x == c.px && iventData[i].y == c.py){
-                        return iventData[i].nextState;
+            //    if(eventPos[c.py][c.px] == '*') {
+                for(int i = 0; i < sizeof(eventData)/sizeof(eventData[0]); i++ ) {
+                    if(eventData[i].x == c.px && eventData[i].y == c.py){
+                        // ここでボタンを押された時 DB関連のボタンなら return eventData[i].nextStateを行わない．
+                        return eventData[i].nextState;
                     }
                 }
-            }
+            // }
         }
         MoveCursor(&c);
         // 動作速度調節
@@ -284,7 +285,7 @@ int TO_DOScreen(){
     InitCobj(&c,4,4, 0.0, 0.0);
 
     //構造体の初期化
-    iventObj iventData[3] = {
+    eventObj eventData[3] = {
         {0, 0, "push up 3set * 15",TO_DO},
         {0, 0, "go to main", MAIN},
         {0,0, "end", END}
@@ -295,20 +296,20 @@ int TO_DOScreen(){
         erase();
         refresh();
         
-        InitUIobj(&todoUI,0,0,w,h,3,iventData);
-        DrawUI(&todoUI,iventPos,iventData);
+        InitUIobj(&todoUI,0,0,w,h,3,eventData);
+        DrawUI(&todoUI,eventPos,eventData);
         DrawCursor(&c);
         // キー入力
         input = ControlCursor(&c);
         if (input == 'q') return END;
         else if(input == 's'){
-               if(iventPos[c.py][c.px] == '*') {
-                for(int i = 0; i < sizeof(iventData)/sizeof(iventData[0]); i++ ) {
-                    if(iventData[i].x == c.px && iventData[i].y == c.py){
-                        return iventData[i].nextState;
+            //    if(eventPos[c.py][c.px] == '*') {
+                for(int i = 0; i < sizeof(eventData)/sizeof(eventData[0]); i++ ) {
+                    if(eventData[i].x == c.px && eventData[i].y == c.py){
+                        return eventData[i].nextState;
                     }
                 }
-            }
+            // }
         }
         MoveCursor(&c);
         // 動作速度調節
