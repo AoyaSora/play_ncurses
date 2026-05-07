@@ -26,5 +26,6 @@ int updateToDo(sqlite3* db, int id, const char*date, const char* task, int statu
 int updateToDoStatus(sqlite3* db, int id,int status);
 int deleteDiaryByID(sqlite3* db, int id);
 int deleteTodoByID(sqlite3* db,int id);
-
+int selectDiaryByDate(sqlite3* db, DiaryObj* d);
+int selectToDoByDate(sqlite3* db,const char* date,ToDoObj t[],int maxCount);
 #endif
