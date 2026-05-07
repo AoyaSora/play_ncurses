@@ -4,6 +4,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include "sqliteFunc.h"
 /* 画面の種類　*/
 enum {
     END, // 0: 終了

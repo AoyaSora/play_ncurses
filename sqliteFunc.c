@@ -177,3 +177,77 @@ int deleteTodoByID(sqlite3* db,int id){
     sqlite3_finalize(stmt);
     return rc;
 }
+// 日付を引数に持ちその日の日記構造体を返す
+int selectDiaryByDate(sqlite3* db, DiaryObj* d){
+    sqlite3_stmt* stmt;
+    const char* sql = "SELECT date, title, content, created_at, updated_at FROM diary WHERE date=? ;";
+    int rc;
+
+    rc = sqlite3_prepare_v2(db,sql,-1,&stmt,NULL);
+    if(rc!=SQLITE_OK) return rc;
+
+    sqlite3_bind_text(stmt, 1, d->date, -1, SQLITE_STATIC);
+
+    rc = sqlite3_step(stmt);
+
+    if(rc == SQLITE_ROW){
+        const unsigned char* text;  // qlite3_column_textの返り血がconst unsigned char*なのでこの型
+        // 下のstrcpyでnullが入らないようにするための処理
+        text= sqlite3_column_text(stmt,0);
+        if(text){
+            strcpy(d->date, (const char*)text);
+        }
+        text = sqlite3_column_text(stmt,1);
+        if(text){
+            strcpy(d->title, (const char*)text);
+        }
+        text= sqlite3_column_text(stmt,2);
+        if(text){
+            strcpy(d->content, (const char*)text);
+        }
+        text = sqlite3_column_text(stmt,3);
+        if(text){
+            strcpy(d->created_at, (const char*)text);
+        }
+        text = sqlite3_column_text(stmt,4);
+        if(text){
+            strcpy(d->updated_at, (const char*)text);
+        }
+    }
+    
+    sqlite3_finalize(stmt);
+    return rc;
+}
+// 日付を引数に持ち，その日のtaskの内容を全て返す
+int selectToDoByDate(sqlite3* db,const char* date,ToDoObj t[],int maxCount){
+    sqlite3_stmt* stmt;
+    const char* sql = "SELECT date, task, status FROM toDo WHERE date=? ;";
+    int rc;
+    int count=0;
+
+    rc = sqlite3_prepare_v2(db,sql,-1,&stmt,NULL);
+    if(rc!=SQLITE_OK) return rc;
+
+    sqlite3_bind_text(stmt, 1, date, -1, SQLITE_STATIC);
+
+    // その日にやる事複数件ある場合
+    while ((rc = sqlite3_step(stmt) == SQLITE_ROW))
+    {
+        /* code */
+        if(count >= maxCount) break;
+        const unsigned char* text; 
+        // date
+        text = sqlite3_column_text(stmt,0);
+        // snprintf(データを出力する記憶域へのポインタ, 出力する文字数，書式を表す文字列へのポインタ，書式に従って出力されるデータ)
+        if(text) snprintf(t[count].date, sizeof(t[count].date), "%s",text ? (const char*)text : "");
+        // task
+        text = sqlite3_column_text(stmt,1);
+        if(text) snprintf(t[count].task, sizeof(t[count].task), "%s",text ? (const char*)text : "");
+        // status
+        t[count].status = sqlite3_column_int(stmt, 2);
+
+        count++;
+    }
+    sqlite3_finalize(stmt);
+    return rc;
+}

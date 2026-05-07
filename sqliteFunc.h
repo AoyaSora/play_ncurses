@@ -5,18 +5,17 @@
 #include<sqlite3.h>
 
 typedef struct {
-    const char *date;
-    const char *title;
-    const char *content;
-    const char *created_at;
-    const char *updated_at;
+    char date[64];
+    char title[256];
+    char content[1024];
+    char created_at[64];
+    char updated_at[64];
 } DiaryObj;
 typedef struct {
-    const char *date;
-    const char *task;
+    char date[64];
+    char task[64];
     int status;
 } ToDoObj;
-
 
 
 int createTable(sqlite3 *db, const char* tableName, const char* columns);

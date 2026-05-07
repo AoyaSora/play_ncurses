@@ -47,5 +47,5 @@ $(TARGET): $(OBJS)
 %.o: %.c
 	$(CC) -c $<
 
-claen:
+clean:
 	rm -f $(OBJS) $(TARGET)

@@ -1,0 +1,2 @@
+time関数とtime_t型
+#include<time.h>
