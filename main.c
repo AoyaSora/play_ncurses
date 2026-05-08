@@ -6,12 +6,26 @@
 #include <string.h>
 #include "sqliteFunc.h"
 /* 画面の種類　*/
-enum {
-    END, // 0: 終了
-    MAIN, // 1: メイン
-    TO_DO,// 2: todoリスト
-    RECORD// 3: 記録
-};
+typedef enum {
+    NONE,   // 遷移なし
+    END,    //  終了
+    MAIN,   //  メイン
+    TO_DO,  // todoリスト
+    RECORD  //  記録
+} NextStateType;
+/* db管理用の数値 */
+typedef enum{
+    DB_EVENT_NONE,         // なし
+    INSERT_DIARY_BYDATE,
+    INSERT_TODO_BYDATE,
+    SELECT_DIARY_BYDATE,
+    SELECT_TODO_BYDATE,
+    UPDATE_DIARY_BYDATE,
+    UPDATE_TODO_BYDATE,
+    UPDATE_TODO_STATUS,
+    DELETE_DIARY_BYID,
+    DELETE_TODO_BYID
+} DBFuncType;
 /* カーソルの構造体　*/
 typedef struct {
     int px, py; //Position(位置)
@@ -19,7 +33,7 @@ typedef struct {
 } Cobj;            // cursor object(カーソルの場所)
 
 /* イベント判定2D配列 */
-char eventPos[200][280]; // 全体でのイベントの場所管理  ボタンの検知用 '*'
+// char eventPos[200][280]; // 全体でのイベントの場所管理  ボタンの検知用 '*'
 /*
     if (eventPos[c.py][c.px] == '*'){
         // event[]のそれぞれのx,yと合うか
@@ -41,7 +55,8 @@ char eventPos[200][280]; // 全体でのイベントの場所管理  ボタン�
 typedef struct {
     unsigned long x,y; // ボタンの場所
     char text[100];     // イベント用のテキスト
-    unsigned long nextState; // 次のイベント内容
+    NextStateType nextState; // 次のイベント内容
+    DBFuncType dbfunc;
 } eventObj; // nextStateの内容をeventPosに入れる
 
 
@@ -106,7 +121,7 @@ void DrawCursor(Cobj *obj)
 }
 
 /* 引数で左上のxyと幅，高さ,共有用のボタン配列を受け取る　*/
-void DrawUI(UIobj *obj, char ButtonPos[][280], eventObj* event)
+void DrawUI(UIobj *obj, eventObj* event)
 {
     int widthLine = obj->w - 2;
     int heightLine = obj->h -2;
@@ -241,8 +256,8 @@ int MainScreen()
 
     //構造体の初期化
     eventObj eventData[2] = {
-        {0, 0, "start the lainbow another way",TO_DO},
-        {0, 0, "next situation xxx", END}
+        {0, 0, "start the lainbow another way",TO_DO, DB_EVENT_NONE},
+        {0, 0, "next situation xxx", END, DB_EVENT_NONE}
     };
 
     timeout(0);
@@ -252,7 +267,7 @@ int MainScreen()
             getmaxyx(stdscr, h, w);
 
         InitUIobj(&menu,0,0,w,h,2,eventData);
-        DrawUI(&menu,eventPos,eventData);
+        DrawUI(&menu,eventData);
         DrawCursor(&c);
         // キー入力
         input = ControlCursor(&c);
@@ -261,7 +276,14 @@ int MainScreen()
             //    if(eventPos[c.py][c.px] == '*') {
                 for(int i = 0; i < sizeof(eventData)/sizeof(eventData[0]); i++ ) {
                     if(eventData[i].x == c.px && eventData[i].y == c.py){
-                        // ここでボタンを押された時 DB関連のボタンなら return eventData[i].nextStateを行わない．
+                        // ここでボタンを押された時 DB関連のボタンなら sqliteFuncで定義された関数を使用したい
+                        // eventData[i].dbfunc();
+                        /*
+                        if(eventData[i].dbchange){
+                            rc = eventData[i].dbfunc();
+                        }
+                        if(eventData[i].nextState!=NULL) return eventData[i].nextState;
+                        */
                         return eventData[i].nextState;
                     }
                 }
@@ -297,7 +319,7 @@ int TO_DOScreen(){
         refresh();
         
         InitUIobj(&todoUI,0,0,w,h,3,eventData);
-        DrawUI(&todoUI,eventPos,eventData);
+        DrawUI(&todoUI,eventData);
         DrawCursor(&c);
         // キー入力
         input = ControlCursor(&c);
@@ -318,7 +340,7 @@ int TO_DOScreen(){
     return 0;
 
 }
-
+// スクリーン関数の引数だけ変えてあげて表示でもいい now: mainScreen TO_DOScreen関数
 
 int main(void)
 {
