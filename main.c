@@ -56,7 +56,7 @@ typedef struct {
     unsigned long x,y; // ボタンの場所
     char text[100];     // イベント用のテキスト
     NextStateType nextState; // 次のイベント内容
-    DBFuncType dbfunc;
+    DBFuncType dbfuncNum;
 } eventObj; // nextStateの内容をeventPosに入れる
 
 
@@ -243,6 +243,30 @@ void DrawUI(UIobj *obj, eventObj* event)
     }
 }
 
+int dbEvent(DBFuncType num){
+    switch(num) {
+        case INSERT_DIARY_BYDATE:
+            insertDiaryTable( )
+            break;
+        case INSERT_TODO_BYDATE:
+            break;
+        case SELECT_DIARY_BYDATE:
+            break;
+        case SELECT_TODO_BYDATE:
+            break;
+        case UPDATE_DIARY_BYDATE:
+            break;
+        case UPDATE_TODO_BYDATE:
+            break;
+        case UPDATE_TODO_STATUS:
+            break;
+        case DELETE_DIARY_BYID:
+            break;
+        case DELETE_TODO_BYID:
+            break;
+    }
+}
+
 int MainScreen()
 {
     Cobj c;
@@ -257,7 +281,7 @@ int MainScreen()
     //構造体の初期化
     eventObj eventData[2] = {
         {0, 0, "start the lainbow another way",TO_DO, DB_EVENT_NONE},
-        {0, 0, "next situation xxx", END, DB_EVENT_NONE}
+        {0, 0, "next situation xxx", NONE, DB_EVENT_NONE}
     };
 
     timeout(0);
@@ -277,14 +301,15 @@ int MainScreen()
                 for(int i = 0; i < sizeof(eventData)/sizeof(eventData[0]); i++ ) {
                     if(eventData[i].x == c.px && eventData[i].y == c.py){
                         // ここでボタンを押された時 DB関連のボタンなら sqliteFuncで定義された関数を使用したい
-                        // eventData[i].dbfunc();
+                        // eventData[i].dbfuncNum();
                         /*
-                        if(eventData[i].dbchange){
-                            rc = eventData[i].dbfunc();
+                        if(eventData[i].dbfuncNum != DB_EVENT_NONE){
+                            rc = dbEvent(eventData[i].dbfuncNum);
                         }
-                        if(eventData[i].nextState!=NULL) return eventData[i].nextState;
+                        if(eventData[i].nextState!=NONE) return eventData[i].nextState;
                         */
-                        return eventData[i].nextState;
+                        if(eventData[i].nextState!=NONE) return eventData[i].nextState;
+                        // return eventData[i].nextState;
                     }
                 }
             // }
@@ -350,6 +375,9 @@ int main(void)
 	noecho();		// 入力されたキーを表示しない
 	cbreak();		// 入力バッファを使わない(Enter 不要の入力)
 	keypad(stdscr, TRUE);	// カーソルキーを使用可能にする
+    /* DB関連 */
+    sqlite3* db;
+    int rc;
     
     /* 本体 ( screen関数の戻り値が次の画面への状態　)*/
     int i = 1;
