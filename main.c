@@ -111,8 +111,8 @@ void MoveCursor(Cobj *obj)
 {
 	int	w, h;
 	getmaxyx(stdscr, h, w);
-    if((obj->px + obj->vx >= 0) && (obj->px + obj->vx <= w-1 ) && (mvinch(obj->py, obj->px + obj->vx) & A_CHARTEXT) == ' ' || (mvinch(obj->py, obj->px + obj->vx) & A_CHARTEXT) == '*') obj->px += obj->vx;
-    if((obj->py + obj->vy >= 0) && (obj->py + obj->vy <= h-1 ) && (mvinch(obj->py + obj->vy, obj->px) & A_CHARTEXT) == ' ' || (mvinch(obj->py + obj->vy, obj->px) & A_CHARTEXT) =='*') obj->py += obj->vy;
+    if((obj->px + obj->vx >= 0) && (obj->px + obj->vx <= w-1 ) && ((mvinch(obj->py, obj->px + obj->vx) & A_CHARTEXT) == ' ' || (mvinch(obj->py, obj->px + obj->vx) & A_CHARTEXT) == '*')) obj->px += obj->vx;
+    if((obj->py + obj->vy >= 0) && (obj->py + obj->vy <= h-1 ) && ((mvinch(obj->py + obj->vy, obj->px) & A_CHARTEXT) == ' ' || (mvinch(obj->py + obj->vy, obj->px) & A_CHARTEXT) =='*')) obj->py += obj->vy;
 }
 /* カーソルの表示　*/
 void DrawCursor(Cobj *obj)
@@ -295,7 +295,7 @@ int MainScreen()
         {0, 0, "next situation xxx", NONE, DB_EVENT_NONE}
     };
 
-    timeout(0);
+    timeout(16);    // fps:60くらい
     while(1){
         erase();
         refresh();

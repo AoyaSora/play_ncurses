@@ -3,7 +3,7 @@
 #define SQLITEFUNC_H
 
 #include<sqlite3.h>
-#define TODO_MAX
+#define TODO_MAX 100
 typedef struct {
     char date[64];
     char title[256];
