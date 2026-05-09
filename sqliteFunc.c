@@ -27,7 +27,7 @@ int createTable(sqlite3 *db, const char* tableName, const char* columns){
     return SQLITE_OK;
 }
 
-int insertDiaryTable(sqlite3* db, const DiaryObj *d){
+int insertDiaryTable(sqlite3* db, DiaryObj *d){
     sqlite3_stmt* stmt;
     const char* sql = "INSERT INTO diary(date,title,content,created_at,updated_at) VALUES (?,?,?,?,?);";
     int rc;
@@ -92,7 +92,7 @@ int insertToDoTable(sqlite3* db, ToDoObj *t){
 UPDATE table SET 変更内容 WHERE 条件;
 idでtitle,content,updated_atを変更している
 */
-int updateDiary(sqlite3* db,int id, const char*title, const char* content, const char* updated_at) {
+int updateDiary(sqlite3* db, DiaryObj* d) {
     sqlite3_stmt* stmt;
     const char* sql = "UPDATE diary SET title=?, content=?, updated_at=? WHERE id=?;";
     int rc;
@@ -100,10 +100,10 @@ int updateDiary(sqlite3* db,int id, const char*title, const char* content, const
     rc = sqlite3_prepare_v2(db,sql,-1,&stmt,NULL);
     if(rc!=SQLITE_OK) return rc;
 
-    sqlite3_bind_text(stmt, 1, title,-1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 2, content,-1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 3, updated_at,-1, SQLITE_STATIC);
-    sqlite3_bind_int(stmt, 4, id);
+    sqlite3_bind_text(stmt, 1, d->title,-1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2, d->content,-1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 3, d->updated_at,-1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 4, d->id);
 
     rc = sqlite3_step(stmt);
 
@@ -111,7 +111,7 @@ int updateDiary(sqlite3* db,int id, const char*title, const char* content, const
     return rc;
 }
 
-int updateToDo(sqlite3* db, int id, const char*date, const char* task, int status){
+int updateToDo(sqlite3* db, ToDoObj* t){
     sqlite3_stmt* stmt;
     const char* sql = "UPDATE toDo SET date=?, task=?, status=? WHERE id=?;";
     int rc;
@@ -119,25 +119,25 @@ int updateToDo(sqlite3* db, int id, const char*date, const char* task, int statu
     rc = sqlite3_prepare_v2(db,sql,-1,&stmt,NULL);
     if(rc!=SQLITE_OK) return rc;
 
-    sqlite3_bind_text(stmt, 1,date,-1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 2,task,-1, SQLITE_STATIC);
-    sqlite3_bind_int(stmt, 3,status);
-    sqlite3_bind_int(stmt, 4,id);
+    sqlite3_bind_text(stmt, 1,t->date,-1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2,t->task,-1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 3,t->status);
+    sqlite3_bind_int(stmt, 4,t->id);
 
     rc = sqlite3_step(stmt);
 
     sqlite3_finalize(stmt);
     return rc;
 }
-int updateToDoStatus(sqlite3* db, int id,int status){
+int updateToDoStatus(sqlite3* db, ToDoObj* t){
     sqlite3_stmt* stmt;
     const char* sql = "UPDATE toDo SET status=? WHERE id=?;";
     int rc;
     rc = sqlite3_prepare_v2(db,sql,-1,&stmt,NULL);
     if(rc!=SQLITE_OK) return rc;
 
-    sqlite3_bind_int(stmt, 1,status);
-    sqlite3_bind_int(stmt, 2,id);
+    sqlite3_bind_int(stmt, 1,t->status);
+    sqlite3_bind_int(stmt, 2,t->id);
     
     rc = sqlite3_step(stmt);
 
@@ -147,7 +147,7 @@ int updateToDoStatus(sqlite3* db, int id,int status){
 
 // delete
 // DELETE FROM テーブル名 WHERE 条件;
-int deleteDiaryByID(sqlite3* db, int id){
+int deleteDiaryByID(sqlite3* db, DiaryObj* d){
     sqlite3_stmt* stmt;
     const char* sql = "DELETE FROM diary WHERE id=?;";
     int rc;
@@ -155,14 +155,14 @@ int deleteDiaryByID(sqlite3* db, int id){
     rc = sqlite3_prepare_v2(db,sql,-1,&stmt,NULL);
     if(rc!=SQLITE_OK) return rc;
 
-    sqlite3_bind_int(stmt, 1,id);
+    sqlite3_bind_int(stmt, 1,d->id);
 
     rc = sqlite3_step(stmt);
 
     sqlite3_finalize(stmt);
     return rc;
 }
-int deleteTodoByID(sqlite3* db,int id){
+int deleteTodoByID(sqlite3* db,ToDoObj* t){
     sqlite3_stmt* stmt;
     const char* sql = "DELETE FROM toDo WHERE id=?;";
     int rc;
@@ -170,7 +170,7 @@ int deleteTodoByID(sqlite3* db,int id){
     rc = sqlite3_prepare_v2(db,sql,-1,&stmt,NULL);
     if(rc!=SQLITE_OK) return rc;
 
-    sqlite3_bind_int(stmt, 1,id);
+    sqlite3_bind_int(stmt, 1,t->id);
 
     rc = sqlite3_step(stmt);
 

@@ -26,6 +26,7 @@ typedef enum{
     DELETE_DIARY_BYID,
     DELETE_TODO_BYID
 } DBFuncType;
+
 /* カーソルの構造体　*/
 typedef struct {
     int px, py; //Position(位置)
@@ -243,26 +244,36 @@ void DrawUI(UIobj *obj, eventObj* event)
     }
 }
 
-int dbEvent(DBFuncType num){
+// 問題点 引数に指定する際使わないものが出てくる．
+int dbEvent(DBFuncType num, AppContent appCon){
+    int rc;
     switch(num) {
         case INSERT_DIARY_BYDATE:
-            insertDiaryTable( )
+            insertDiaryTable(appCon.db, appCon.diary);
             break;
         case INSERT_TODO_BYDATE:
+            insertToDoTable(appCon.db, appCon.todos);
             break;
         case SELECT_DIARY_BYDATE:
+            selectDiaryByDate(appCon.db, appCon.diary);
             break;
         case SELECT_TODO_BYDATE:
+            selectToDoByDate(appCon.db,t->date, todos[], maxCount);
             break;
         case UPDATE_DIARY_BYDATE:
+            updateDiary(appCon.db, d);
             break;
         case UPDATE_TODO_BYDATE:
+            updateToDo(appCon.db, t);
             break;
         case UPDATE_TODO_STATUS:
+            updateToDoStatus(appCon.db, t);
             break;
         case DELETE_DIARY_BYID:
+            deleteDiaryByID(appCon.db, d);
             break;
         case DELETE_TODO_BYID:
+            deleteTodoByID(appCon.db, t);
             break;
     }
 }
@@ -378,7 +389,7 @@ int main(void)
     /* DB関連 */
     sqlite3* db;
     int rc;
-    
+
     /* 本体 ( screen関数の戻り値が次の画面への状態　)*/
     int i = 1;
     int nextScreen = MainScreen();
