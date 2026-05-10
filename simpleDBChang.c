@@ -110,10 +110,10 @@ int ControlCursor(Cobj *obj)
     key = getch();
     obj->vx = obj->vy = 0.0;
     switch(key){
-        case KEY_UP : obj->vy = -1.0; return KEY_UP;
-        case KEY_DOWN : obj->vy = 1.0; return KEY_DOWN;
-        case KEY_LEFT : obj->vx = -1.0; return KEY_LEFT;
-        case KEY_RIGHT : obj->vx = 1.0; return KEY_RIGHT;
+        case KEY_UP : obj->vy = -1.0; break;
+        case KEY_DOWN : obj->vy = 1.0; break;
+        case KEY_LEFT : obj->vx = -1.0; break;
+        case KEY_RIGHT : obj->vx = 1.0; break;
         case ' ' : return ('s'); break;
         case 'q': case 'Q': case'\e': return ('q'); break;
         default : break;
@@ -122,48 +122,82 @@ int ControlCursor(Cobj *obj)
     return (key);
 }
 // screenで最初に実行．範囲決めてることが，文字数と描画範囲へ影響を及ぼしている
-void viewText(textObj* textObj ){
-    // 描画
-    // wとhを用いてfor文で回す
-    unsigned long n=0;
-    char c;
-    for(int i =0; i < textObj->h; i++) {
-        move(textObj->y + i, textObj->x) ;
-        for(int j = 0 ; j < textObj->w - 1; j++ ) {
-            c = textObj->content[n];
-            if(c == '\0') return;
-            addch(c);
-            n++;
+// void viewText(textObj* textObj ){
+//     // 描画
+//     // wとhを用いてfor文で回す
+//     unsigned long n=0;
+//     char c;
+//     for(int i =0; i < textObj->h; i++) {
+//         move(textObj->y + i, textObj->x) ;
+//         for(int j = 0 ; j < textObj->w - 1; j++ ) {
+//             c = textObj->content[n];
+//             if(c == '\0') return;
+//             addch(c);
+//             n++;
+//         }
+//     }
+// }
+void updateViewText(Cobj* Cobj, textObj* textObj){
+    // カーソルの位置に応じてこのtextObj内のカーソルの位置を決める
+    int NextCursorIndex=0;
+    int n=0;
+    // カーソルの移動 移動方向に応じてcontentのどのインデックスの間に' 'を入れるか決める
+    // カーソルの移動と場所で次の'|'の位置nを決め，そこに' 'をおく
+    // 
+    int cPos = (Cobj->px - textObj->x) + (Cobj->py - textObj->y) * (textObj->w-1); // cのtext内での位置(indexと対応)
+    NextCursorIndex = cPos + Cobj->vx + Cobj->vy*(textObj->w-1);
+    // clear
+    for(int i = 0; i < textObj->h; i++){
+        move(textObj->y+i,textObj->x);
+        for(int j = 0; j < textObj->w ; j++){
+            addch(' ');
         }
     }
-}
-void updateViewText(Cobj* Cobj, textObj* textObj,int input){
-    //カーソルのある行だけ変更したい 上下はおんなじ処理
-    char* temp;
-    // viewの範囲内にあるか
-    if(Cobj->px < textObj->x || Cobj->px > (textObj->x + textObj->w) || Cobj->py < textObj->y || Cobj->py > (textObj->y + textObj->h)) return;
-    //移動
-    switch (input)
-    {
-    case KEY_UP:
-        // Cobj->pyに応じてその行の変更箇所をきめる
-        // カーソルの右側の文字列を取得する．innstr(char* str, int n); nはtextObj->x + textObj-> w - 1
-
-        break;
-    case KEY_DOWN:
-        
-        break;
-    case KEY_LEFT:
-        
-        break;
-    case KEY_RIGHT:
-        
-        break;
-    default:
-        break;
+    // 描画
+    for(int i = 0; i < textObj->h; i++){
+        // 改行
+        move(textObj->y+i,textObj->x);
+        for(int j = 0; j < textObj->w - 1; j++){
+            if(textObj->content[n] == '\0') return;
+            if(j+i*(textObj->w - 1) == NextCursorIndex){
+                addch(' ');
+            }else{
+                addch(textObj->content[n]);
+                n++;
+            }
+        }
     }
+    // 文字の更新
+
+
+    // //移動
+    // switch (input)
+    // {
+    // case KEY_UP:
+        
+    //     break;
+    // case KEY_DOWN:
+        
+    //     break;
+    // case KEY_LEFT:
+    //     // for文1回 iの始まりをcの位置で処理．contentのインデックスの合わせ
+    //     // 
+    //     break;
+    // case KEY_RIGHT:
+    //     // for文1回 iの始まりをcの位置で処理 
+    //     // 今のカーソルの場所にcontentを表示，' 'を表示のちcontentを表示
+    //     if(content[row*l+r+1] == '\0') return;
+    //     if(r <= 8 ) mvaddch(Cobj->py, Cobj->px, content[row*l+r]);
+    //     addch(' '); // 右に動かしたカーソル用
+    //     // for(int i = r+1; i < textObj->w; i++ ){
+    //     //     addch(content[row*l+i]);
+    //     // }
+    //     break;
+    // default:
+    //     break;
+    // }
 }
-void InitTextObj(textObj* textObj,int x,int y, int w, int h, char* content[MAX_CONTEXT]){
+void InitTextObj(textObj* textObj,int x,int y, int w, int h, char content[MAX_CONTEXT]){
     textObj->x = x;
     textObj->y = y;
     textObj->w = w;
@@ -173,7 +207,7 @@ void InitTextObj(textObj* textObj,int x,int y, int w, int h, char* content[MAX_C
 
 int main(){
     Cobj c;
-    char input;
+    int input;
     int w,h;
     textObj tObj;
 
@@ -185,10 +219,10 @@ int main(){
 	keypad(stdscr, TRUE);	// カーソルキーを使用可能にする
     start_color();
     refresh();
-
-    InitTextObj(&tObj,0,0,10,10,"Hello,world. Nice to see you");
+    char text[] = "Hello,world. Nice to see you";
+    InitTextObj(&tObj,2,2,10,10,text);
     InitCobj(&c,0,0,0,0);
-    viewText(&tObj);
+    // viewText(&tObj);
 
     timeout(16);
     while(1){
@@ -196,7 +230,7 @@ int main(){
         getmaxyx(stdscr, h, w);
         input = ControlCursor(&c);
         if(input=='q') break;
-        updateViewText(&c, &tObj, input);
+        updateViewText(&c, &tObj);
         MoveCursor(&c);
         DrawCursor(&c);
         refresh();
