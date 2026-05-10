@@ -51,6 +51,13 @@ char str[]を使用する
 '|'の左の文字から"l|lo,world"をinnstrで取得，'heのあとに'|'を描画，innstrで取得した文字列から'|'を除いた文字列を描画．
 ・上下に'|'を移動させる場合，行だけ変えて左に'|'を動かす処理を行う．'|'があった行はinnstrで'|'を除いた文字列を描画
 
+別案
+文字列を配列で保持し，カーソルの移動に応じて配列を操作．
+利点- 文字を書き換えたり増やしたりする処理を同じようにできる．
+方法- cの場所に応じて描画をcの前の文字配列，'|'(c)，cの後の文字列の順にする．配列自体は変更していないのでとてもいい．
+
+
+
 innstr(char* str,int n); でカーソル位置からn文字,strに格納する
 最終的なstrへの上書きは，innstrを用いて一行ずつ配列に入れていく(カーソル位置の'|'は除く)
 */
@@ -62,6 +69,10 @@ innstr(char* str,int n); でカーソル位置からn文字,strに格納する
 */
 
 char content[MAX_CONTEXT] = "Hello,world. Nice to see you";
+typedef struct{
+    int x,y,w,h;
+    char content[MAX_CONTEXT];
+} textObj;
 
 /* カーソルの構造体　*/
 typedef struct {
@@ -99,10 +110,10 @@ int ControlCursor(Cobj *obj)
     key = getch();
     obj->vx = obj->vy = 0.0;
     switch(key){
-        case KEY_UP : obj->vy = -1.0; break;
-        case KEY_DOWN : obj->vy = 1.0; break;
-        case KEY_LEFT : obj->vx = -1.0; break;
-        case KEY_RIGHT : obj->vx = 1.0; break;
+        case KEY_UP : obj->vy = -1.0; return KEY_UP;
+        case KEY_DOWN : obj->vy = 1.0; return KEY_DOWN;
+        case KEY_LEFT : obj->vx = -1.0; return KEY_LEFT;
+        case KEY_RIGHT : obj->vx = 1.0; return KEY_RIGHT;
         case ' ' : return ('s'); break;
         case 'q': case 'Q': case'\e': return ('q'); break;
         default : break;
@@ -111,28 +122,60 @@ int ControlCursor(Cobj *obj)
     return (key);
 }
 // screenで最初に実行．範囲決めてることが，文字数と描画範囲へ影響を及ぼしている
-void viewText(char content[MAX_CONTEXT],int x,int y, int w, int h){
+void viewText(textObj* textObj ){
     // 描画
     // wとhを用いてfor文で回す
     unsigned long n=0;
     char c;
-    for(int i =0; i < h; i++) {
-        move(y+i,x);
-        for(int j=0; j < w-1;j++ ) {
-            c = content[n];
+    for(int i =0; i < textObj->h; i++) {
+        move(textObj->y + i, textObj->x) ;
+        for(int j = 0 ; j < textObj->w - 1; j++ ) {
+            c = textObj->content[n];
             if(c == '\0') return;
             addch(c);
             n++;
         }
     }
 }
+void updateViewText(Cobj* Cobj, textObj* textObj,int input){
+    //カーソルのある行だけ変更したい 上下はおんなじ処理
+    char* temp;
+    // viewの範囲内にあるか
+    if(Cobj->px < textObj->x || Cobj->px > (textObj->x + textObj->w) || Cobj->py < textObj->y || Cobj->py > (textObj->y + textObj->h)) return;
+    //移動
+    switch (input)
+    {
+    case KEY_UP:
+        // Cobj->pyに応じてその行の変更箇所をきめる
+        // カーソルの右側の文字列を取得する．innstr(char* str, int n); nはtextObj->x + textObj-> w - 1
+
+        break;
+    case KEY_DOWN:
+        
+        break;
+    case KEY_LEFT:
+        
+        break;
+    case KEY_RIGHT:
+        
+        break;
+    default:
+        break;
+    }
+}
+void InitTextObj(textObj* textObj,int x,int y, int w, int h, char* content[MAX_CONTEXT]){
+    textObj->x = x;
+    textObj->y = y;
+    textObj->w = w;
+    textObj->h = h;
+    strcpy(textObj->content,content);
+}
 
 int main(){
     Cobj c;
     char input;
     int w,h;
-    WINDOW *win1;
-
+    textObj tObj;
 
     /* curses の設定 */
 	initscr();
@@ -143,19 +186,17 @@ int main(){
     start_color();
     refresh();
 
-    win1 = newwin(10, 10, 5, 5);
-
+    InitTextObj(&tObj,0,0,10,10,"Hello,world. Nice to see you");
     InitCobj(&c,0,0,0,0);
-    viewText(content,2,2,10,10);
-            mvwprintw(win1, 0, 0, "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRST");
+    viewText(&tObj);
 
     timeout(16);
     while(1){
-        wrefresh(win1);
         // erase();
         getmaxyx(stdscr, h, w);
         input = ControlCursor(&c);
         if(input=='q') break;
+        updateViewText(&c, &tObj, input);
         MoveCursor(&c);
         DrawCursor(&c);
         refresh();
@@ -163,7 +204,6 @@ int main(){
     }
     
     /* 終了 */
-    delwin(win1);
     endwin();
     return 0;
 }
