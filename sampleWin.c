@@ -2,27 +2,25 @@
 
 int main(int argc, char *argv[])
 {
-    WINDOW *local_win;
-    WINDOW *second_win;
+    WINDOW *win1, *win2;
+
     initscr();
     noecho();
-    cbreak();
-    local_win = newwin(5, 10, 2, 3);
-    second_win = newwin(20,40,2,2);
-    box(local_win, 0 , '-');
-    mvwprintw(local_win, 1, 1, "01234567890");
-    refresh();              // 何も書いてないが元スクリーンもrefreshする必要がある
-    wrefresh(local_win);    // ウィンドウを更新
+    start_color();
+    init_pair(1, COLOR_WHITE, COLOR_BLUE);
+    refresh();
+    win1 = newwin(4, 4, 5, 5);
+    win2 = newwin(7, 7, 7, 8);
+    wbkgd(win1, COLOR_PAIR(1));
+    mvwprintw(win1, 0, 0, "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRST");
+    mvwprintw(win2, 0, 0, "0123456789001234567890012345678900123456789012");
+    overlay(win1, win2);
+    //// overlayによりwin1が上になる
+    wrefresh(win1);
+    wrefresh(win2);
     getch();
-    delwin(local_win);
-
-    box(second_win,'|','-');
-    mvwprintw(local_win, 1, 1, "01234567890");
-    refresh();              // 何も書いてないが元スクリーンもrefreshする必要がある
-    wrefresh(second_win);
-    getch();
-    delwin(second_win);
-
+    delwin(win1);
+    delwin(win2);
     endwin();
     return 0;
 }

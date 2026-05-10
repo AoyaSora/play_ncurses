@@ -131,6 +131,8 @@ int main(){
     Cobj c;
     char input;
     int w,h;
+    WINDOW *win1;
+
 
     /* curses の設定 */
 	initscr();
@@ -138,13 +140,18 @@ int main(){
 	noecho();		// 入力されたキーを表示しない
 	cbreak();		// 入力バッファを使わない(Enter 不要の入力)
 	keypad(stdscr, TRUE);	// カーソルキーを使用可能にする
+    start_color();
+    refresh();
 
+    win1 = newwin(10, 10, 5, 5);
 
     InitCobj(&c,0,0,0,0);
-
     viewText(content,2,2,10,10);
+            mvwprintw(win1, 0, 0, "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRST");
+
     timeout(16);
     while(1){
+        wrefresh(win1);
         // erase();
         getmaxyx(stdscr, h, w);
         input = ControlCursor(&c);
@@ -156,6 +163,7 @@ int main(){
     }
     
     /* 終了 */
+    delwin(win1);
     endwin();
     return 0;
 }
