@@ -64,7 +64,10 @@ innstr(char* str,int n); でカーソル位置からn文字,strに格納する
 
 
 /*
-描画範囲の列数は10，行数は10．これにすると列数が'|'の分-1され 10x9．
+A|BCにAD|BCなど文字列を操作したい場合はupdateViewText内でwhileを用いて行う．
+表示と入力で描画と配列を制御し，関数を抜ける時に文字列配列の変更を伝えDB情報を変更する
+中で変更用の配列を作成し，最後に関数を抜ける時にポインタの配列へ内容を書き換える．
+戻り値は変更したかどうかでDB関数を呼ぶ．
 
 */
 
@@ -137,65 +140,44 @@ int ControlCursor(Cobj *obj)
 //         }
 //     }
 // }
+void updateText(){
+    int key;
+    key = getch();
+
+}
+
 void updateViewText(Cobj* Cobj, textObj* textObj){
-    // カーソルの位置に応じてこのtextObj内のカーソルの位置を決める
-    int NextCursorIndex=0;
-    int n=0;
-    // カーソルの移動 移動方向に応じてcontentのどのインデックスの間に' 'を入れるか決める
-    // カーソルの移動と場所で次の'|'の位置nを決め，そこに' 'をおく
-    // 
-    int cPos = (Cobj->px - textObj->x) + (Cobj->py - textObj->y) * (textObj->w-1); // cのtext内での位置(indexと対応)
-    NextCursorIndex = cPos + Cobj->vx + Cobj->vy*(textObj->w-1);
-    // clear
-    for(int i = 0; i < textObj->h; i++){
-        move(textObj->y+i,textObj->x);
-        for(int j = 0; j < textObj->w ; j++){
-            addch(' ');
-        }
-    }
-    // 描画
-    for(int i = 0; i < textObj->h; i++){
-        // 改行
-        move(textObj->y+i,textObj->x);
-        for(int j = 0; j < textObj->w - 1; j++){
-            if(textObj->content[n] == '\0') return;
-            if(j+i*(textObj->w - 1) == NextCursorIndex){
+        // カーソルの位置に応じてこのtextObj内のカーソルの位置を決める
+        int NextCursorIndex=0;
+        int n=0;
+        // カーソルの移動 移動方向に応じてcontentのどのインデックスの間に' 'を入れるか決める
+        // カーソルの移動と場所で次の'|'の位置nを決め，そこに' 'をおく
+        // 
+        int cPos = (Cobj->px - textObj->x) + (Cobj->py - textObj->y) * (textObj->w-1); // cのtext内での位置(indexと対応)
+        NextCursorIndex = cPos + Cobj->vx + Cobj->vy*(textObj->w-1);
+        // clear
+        for(int i = 0; i < textObj->h; i++){
+            move(textObj->y+i,textObj->x);
+            for(int j = 0; j < textObj->w ; j++){
                 addch(' ');
-            }else{
-                addch(textObj->content[n]);
-                n++;
             }
         }
-    }
-    // 文字の更新
-
-
-    // //移動
-    // switch (input)
-    // {
-    // case KEY_UP:
+        // 描画
+        for(int i = 0; i < textObj->h; i++){
+            // 改行
+            move(textObj->y+i,textObj->x);
+            for(int j = 0; j < textObj->w - 1; j++){
+                if(textObj->content[n] == '\0') return;
+                if(j+i*(textObj->w - 1) == NextCursorIndex){
+                    addch(' ');
+                }else{
+                    addch(textObj->content[n]);
+                    n++;
+                }
+            }
         
-    //     break;
-    // case KEY_DOWN:
-        
-    //     break;
-    // case KEY_LEFT:
-    //     // for文1回 iの始まりをcの位置で処理．contentのインデックスの合わせ
-    //     // 
-    //     break;
-    // case KEY_RIGHT:
-    //     // for文1回 iの始まりをcの位置で処理 
-    //     // 今のカーソルの場所にcontentを表示，' 'を表示のちcontentを表示
-    //     if(content[row*l+r+1] == '\0') return;
-    //     if(r <= 8 ) mvaddch(Cobj->py, Cobj->px, content[row*l+r]);
-    //     addch(' '); // 右に動かしたカーソル用
-    //     // for(int i = r+1; i < textObj->w; i++ ){
-    //     //     addch(content[row*l+i]);
-    //     // }
-    //     break;
-    // default:
-    //     break;
-    // }
+        }
+        // 文字の更新
 }
 void InitTextObj(textObj* textObj,int x,int y, int w, int h, char content[MAX_CONTEXT]){
     textObj->x = x;
