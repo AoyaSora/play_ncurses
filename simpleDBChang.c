@@ -64,7 +64,7 @@ innstr(char* str,int n); でカーソル位置からn文字,strに格納する
 
 
 /*
-A|BCにAD|BCなど文字列を操作したい場合はupdateViewText内でwhileを用いて行う．
+A|BCにAD|BCなど文字列を操作したい場合はDrawText内でwhileを用いて行う．
 表示と入力で描画と配列を制御し，関数を抜ける時に文字列配列の変更を伝えDB情報を変更する
 中で変更用の配列を作成し，最後に関数を抜ける時にポインタの配列へ内容を書き換える．
 戻り値は変更したかどうかでDB関数を呼ぶ．
@@ -74,6 +74,7 @@ A|BCにAD|BCなど文字列を操作したい場合はupdateViewText内でwhile�
 char content[MAX_CONTEXT] = "Hello,world. Nice to see you";
 typedef struct{
     int x,y,w,h;
+    int cursorIndex;
     char content[MAX_CONTEXT];
 } textObj;
 
@@ -117,7 +118,6 @@ int ControlCursor(Cobj *obj)
         case KEY_DOWN : obj->vy = 1.0; break;
         case KEY_LEFT : obj->vx = -1.0; break;
         case KEY_RIGHT : obj->vx = 1.0; break;
-        case ' ' : return ('s'); break;
         case 'q': case 'Q': case'\e': return ('q'); break;
         default : break;
 
@@ -140,21 +140,40 @@ int ControlCursor(Cobj *obj)
 //         }
 //     }
 // }
-void updateText(){
-    int key;
-    key = getch();
-
+void UpdateText(Cobj* Cobj, textObj* textObj, int input){
+    if((input == KEY_DOWN )|| (input == KEY_UP) || (input == KEY_LEFT )|| (input == KEY_RIGHT)|| (input == -1)) return;
+    mvprintw(20,20,"UpdateText input:%d",input);
+    // まずtextObj範囲内か
+    if((Cobj->px < textObj->x )|| (Cobj->px > textObj->x +textObj->w) || (Cobj->py < textObj->y )|| (Cobj->py > textObj->y +textObj->h) ) return;
+    //　textObjのtextObj->content[textObj->cursorIndex]で
+    switch (input)
+    {
+        case KEY_BACKSPACE :{
+            /* delete char from textObj->content[x] */
+            int index=0;
+            while(textObj->content[textObj->cursorIndex+index]!='\0'){
+                textObj->content[textObj->cursorIndex+index] = textObj->content[textObj->cursorIndex+index+1];
+                index++;
+            }
+            break;
+        }
+        default :{
+            for(int i =MAX_CONTEXT; i > textObj->cursorIndex; i-- ){
+                textObj->content[i] = textObj->content[i-1];
+            }
+            textObj->content[textObj->cursorIndex] = input;
+            break;
+        }
+    }
 }
 
-void updateViewText(Cobj* Cobj, textObj* textObj){
+void DrawText(Cobj* Cobj, textObj* textObj){
         // カーソルの位置に応じてこのtextObj内のカーソルの位置を決める
-        int NextCursorIndex=0;
         int n=0;
         // カーソルの移動 移動方向に応じてcontentのどのインデックスの間に' 'を入れるか決める
         // カーソルの移動と場所で次の'|'の位置nを決め，そこに' 'をおく
         // 
-        int cPos = (Cobj->px - textObj->x) + (Cobj->py - textObj->y) * (textObj->w-1); // cのtext内での位置(indexと対応)
-        NextCursorIndex = cPos + Cobj->vx + Cobj->vy*(textObj->w-1);
+        textObj->cursorIndex = (Cobj->px - textObj->x) + (Cobj->py - textObj->y) * (textObj->w-1); // cのtext内での位置(indexと対応)
         // clear
         for(int i = 0; i < textObj->h; i++){
             move(textObj->y+i,textObj->x);
@@ -168,7 +187,7 @@ void updateViewText(Cobj* Cobj, textObj* textObj){
             move(textObj->y+i,textObj->x);
             for(int j = 0; j < textObj->w - 1; j++){
                 if(textObj->content[n] == '\0') return;
-                if(j+i*(textObj->w - 1) == NextCursorIndex){
+                if(j+i*(textObj->w-1) == textObj->cursorIndex){
                     addch(' ');
                 }else{
                     addch(textObj->content[n]);
@@ -211,9 +230,15 @@ int main(){
         // erase();
         getmaxyx(stdscr, h, w);
         input = ControlCursor(&c);
+        mvprintw(21,21,"main input:%d",input);
+
         if(input=='q') break;
-        updateViewText(&c, &tObj);
+        // データ変更
         MoveCursor(&c);
+        UpdateText(&c,&tObj,input);
+
+        //描画
+        DrawText(&c, &tObj);
         DrawCursor(&c);
         refresh();
         usleep(20000);
