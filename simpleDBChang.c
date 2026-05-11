@@ -153,14 +153,18 @@ void UpdateText(Cobj* Cobj, textObj* textObj, int input){
             /* delete char from textObj->content[x] */
             int index=0;
             if((Cobj->px == textObj->x)&&(Cobj->py == textObj->y) ) break;
-            if(Cobj->px == textObj->x) 
-            // 左端で１文字消す場合
-            // if(Cobj->px == textObj->x ) Cobj->px = textObj->x+textObj->w-1; Cobj->py -=1;
             while(textObj->content[textObj->cursorIndex+index]!='\0'){
                 textObj->content[textObj->cursorIndex+index -1] = textObj->content[textObj->cursorIndex+index];
                 index++;
             }
-            Cobj->px -= 1;
+            // 左端で１文字消す場合
+            if(Cobj->px == textObj->x ){ 
+                Cobj->px = textObj->x+textObj->w-1; 
+                Cobj->py -=1;
+            }
+            else{ 
+                Cobj->px = Cobj->px - 1;
+            }
             break;
         }
         default :{
