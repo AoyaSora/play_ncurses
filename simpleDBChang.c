@@ -118,6 +118,7 @@ int ControlCursor(Cobj *obj)
         case KEY_DOWN : obj->vy = 1.0; break;
         case KEY_LEFT : obj->vx = -1.0; break;
         case KEY_RIGHT : obj->vx = 1.0; break;
+        case 127 : return KEY_BACKSPACE;
         case 'q': case 'Q': case'\e': return ('q'); break;
         default : break;
 
@@ -151,17 +152,25 @@ void UpdateText(Cobj* Cobj, textObj* textObj, int input){
         case KEY_BACKSPACE :{
             /* delete char from textObj->content[x] */
             int index=0;
+            if((Cobj->py == textObj->y) &&(Cobj->px == textObj->x )) break;
             while(textObj->content[textObj->cursorIndex+index]!='\0'){
-                textObj->content[textObj->cursorIndex+index] = textObj->content[textObj->cursorIndex+index+1];
+                textObj->content[textObj->cursorIndex+index -1] = textObj->content[textObj->cursorIndex+index];
                 index++;
             }
+            Cobj->px -= 1;
             break;
         }
         default :{
+            
             for(int i =MAX_CONTEXT; i > textObj->cursorIndex; i-- ){
                 textObj->content[i] = textObj->content[i-1];
             }
             textObj->content[textObj->cursorIndex] = input;
+            // textObj->cursorIndex+=1;    // DrawText内でcurosrIndexを更新しているからここでインクリメントしても意味ない
+            // やるとしたらCobjの場所を変更する
+            // 右端に到達したらpx,pyどちらも変更する．そうでない場合はpxをインクリメント
+            Cobj->px += 1;
+            // if((Cobj->px - textObj->x) >( textObj->w - 1)) Cobj->py += 1; Cobj->px = textObj->x;
             break;
         }
     }
@@ -230,7 +239,7 @@ int main(){
         // erase();
         getmaxyx(stdscr, h, w);
         input = ControlCursor(&c);
-        mvprintw(21,21,"main input:%d",input);
+        // mvprintw(21,21,"main KEY_BACK:%d",KEY_DC);
 
         if(input=='q') break;
         // データ変更
