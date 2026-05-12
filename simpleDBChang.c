@@ -143,7 +143,7 @@ int ControlCursor(Cobj *obj)
 // }
 void UpdateText(Cobj* Cobj, textObj* textObj, int input){
     if((input == KEY_DOWN )|| (input == KEY_UP) || (input == KEY_LEFT )|| (input == KEY_RIGHT)|| (input == -1)) return;
-    mvprintw(20,20,"UpdateText input:%d",input);
+    // mvprintw(20,20,"UpdateText input:%d",input);
     // まずtextObj範囲内か
     if((Cobj->px < textObj->x )|| (Cobj->px > textObj->x +textObj->w) || (Cobj->py < textObj->y )|| (Cobj->py > textObj->y +textObj->h) ) return;
     //　textObjのtextObj->content[textObj->cursorIndex]で
@@ -151,7 +151,7 @@ void UpdateText(Cobj* Cobj, textObj* textObj, int input){
     {
         case KEY_BACKSPACE :{
             /* delete char from textObj->content[x] */
-            int index=0;
+            int index=0;//
             if((Cobj->px == textObj->x)&&(Cobj->py == textObj->y) ) break;
             while(textObj->content[textObj->cursorIndex+index]!='\0'){
                 textObj->content[textObj->cursorIndex+index -1] = textObj->content[textObj->cursorIndex+index];
@@ -159,7 +159,7 @@ void UpdateText(Cobj* Cobj, textObj* textObj, int input){
             }
             // 左端で１文字消す場合
             if(Cobj->px == textObj->x ){ 
-                Cobj->px = textObj->x+textObj->w-1; 
+                Cobj->px = textObj->x+textObj->w - 1; 
                 Cobj->py -=1;
             }
             else{ 
@@ -184,33 +184,56 @@ void UpdateText(Cobj* Cobj, textObj* textObj, int input){
 }
 
 void DrawText(Cobj* Cobj, textObj* textObj){
+        // mvprintw(21,20,"DrawText  c->px:%d, c->py:%d",Cobj->px,Cobj->py);
         // カーソルの位置に応じてこのtextObj内のカーソルの位置を決める
         int n=0;
         // カーソルの移動 移動方向に応じてcontentのどのインデックスの間に' 'を入れるか決める
         // カーソルの移動と場所で次の'|'の位置nを決め，そこに' 'をおく
-        // 
-        textObj->cursorIndex = (Cobj->px - textObj->x) + (Cobj->py - textObj->y) * (textObj->w-1); // cのtext内での位置(indexと対応)
-        // clear
-        for(int i = 0; i < textObj->h; i++){
-            move(textObj->y+i,textObj->x);
-            for(int j = 0; j < textObj->w ; j++){
-                addch(' ');
-            }
-        }
-        // 描画
-        for(int i = 0; i < textObj->h; i++){
-            // 改行
-            move(textObj->y+i,textObj->x);
-            for(int j = 0; j < textObj->w - 1; j++){
-                if(textObj->content[n] == '\0') return;
-                if(j+i*(textObj->w-1) == textObj->cursorIndex){
+        // カーソルが範囲外
+        if((Cobj->px < textObj->x )|| (Cobj->px > textObj->x +textObj->w) || (Cobj->py < textObj->y )|| (Cobj->py > textObj->y +textObj->h) ){
+            // clear
+            for(int i = 0; i < textObj->h; i++){
+                move(textObj->y+i,textObj->x);
+                for(int j = 0; j < textObj->w ; j++){
                     addch(' ');
-                }else{
-                    addch(textObj->content[n]);
-                    n++;
                 }
             }
-        
+            // 描画
+            for(int i = 0; i < textObj->h; i++){
+                // 改行
+                move(textObj->y+i,textObj->x);
+                for(int j = 0; j < textObj->w; j++){
+                    if(textObj->content[n] == '\0') return;
+                    addch(textObj->content[n]);
+                    n++; 
+                }
+            
+            }
+        }else{      // カーソルが範囲内
+            textObj->cursorIndex = (Cobj->px - textObj->x) + (Cobj->py - textObj->y) * (textObj->w); // cのtext内での位置(indexと対応)
+            mvprintw(23,20,"DrawText  cursorIndex:%03d",textObj->cursorIndex);
+            // clear
+            for(int i = 0; i < textObj->h; i++){
+                move(textObj->y+i,textObj->x);
+                for(int j = 0; j < textObj->w ; j++){
+                    addch(' ');
+                }
+            }
+            // 描画
+            for(int i = 0; i < textObj->h; i++){
+                // 改行
+                move(textObj->y+i,textObj->x);
+                for(int j = 0; j < textObj->w; j++){
+                    if(textObj->content[n] == '\0') return;
+                    if( j + i * (textObj->w) == textObj->cursorIndex){
+                        addch(' ');
+                    }else{
+                        addch(textObj->content[n]);
+                        n++;
+                    }
+                }
+            
+            }
         }
         // 文字の更新
 }
