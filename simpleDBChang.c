@@ -174,11 +174,14 @@ void UpdateText(Cobj* Cobj, textObj* textObj, int input){
                 textObj->content[i] = textObj->content[i-1];
             }
             textObj->content[textObj->cursorIndex] = input;
-            // textObj->cursorIndex+=1;    // DrawText内でcurosrIndexを更新しているからここでインクリメントしても意味ない
-            // やるとしたらCobjの場所を変更する
             // 右端に到達したらpx,pyどちらも変更する．そうでない場合はpxをインクリメント
-            Cobj->px += 1;
-            // if((Cobj->px - textObj->x) >( textObj->w - 1)) Cobj->py += 1; Cobj->px = textObj->x;
+            if(Cobj->px == textObj->x + textObj->w-1){
+                Cobj->px = textObj->x;
+                Cobj->py += 1;
+            }
+            else{
+                Cobj->px += 1;
+            }
             break;
         }
     }
