@@ -151,18 +151,19 @@ void UpdateText(Cobj* Cobj, textObj* textObj, int input){
     {
         case KEY_BACKSPACE :{
             /* delete char from textObj->content[x] */
-            int index=0;//
+            int index=0;// '\0'以降の一文字を'\0'にする必要がある．
             if((Cobj->px == textObj->x)&&(Cobj->py == textObj->y) ) break;
             while(textObj->content[textObj->cursorIndex+index]!='\0'){
                 textObj->content[textObj->cursorIndex+index -1] = textObj->content[textObj->cursorIndex+index];
                 index++;
             }
-            // 左端で１文字消す場合
+            textObj->content[textObj->cursorIndex+index-1]='\0';
+            // 左端で１文字消す場合 カーソル位置移動
             if(Cobj->px == textObj->x ){ 
                 Cobj->px = textObj->x+textObj->w - 1; 
                 Cobj->py -=1;
             }
-            else{ 
+            else{ // 左へカーソル位置移動
                 Cobj->px = Cobj->px - 1;
             }
             break;
