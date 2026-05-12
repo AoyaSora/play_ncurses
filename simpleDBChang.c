@@ -157,7 +157,7 @@ void UpdateText(Cobj* Cobj, textObj* textObj, int input){
                 textObj->content[textObj->cursorIndex+index -1] = textObj->content[textObj->cursorIndex+index];
                 index++;
             }
-            textObj->content[textObj->cursorIndex+index-1]='\0';
+            textObj->content[textObj->cursorIndex+index-1]=' '; // or '\0'
             // 左端で１文字消す場合 カーソル位置移動
             if(Cobj->px == textObj->x ){ 
                 Cobj->px = textObj->x+textObj->w - 1; 
@@ -194,7 +194,7 @@ void DrawText(Cobj* Cobj, textObj* textObj){
         // カーソルの移動 移動方向に応じてcontentのどのインデックスの間に' 'を入れるか決める
         // カーソルの移動と場所で次の'|'の位置nを決め，そこに' 'をおく
         // カーソルが範囲外
-        if((Cobj->px < textObj->x )|| (Cobj->px > textObj->x +textObj->w) || (Cobj->py < textObj->y )|| (Cobj->py > textObj->y +textObj->h) ){
+        if((Cobj->px < textObj->x )|| (Cobj->px > textObj->x +textObj->w-1) || (Cobj->py < textObj->y )|| (Cobj->py > textObj->y +textObj->h) ){
             // clear
             for(int i = 0; i < textObj->h; i++){
                 move(textObj->y+i,textObj->x);
