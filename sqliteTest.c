@@ -35,8 +35,8 @@ int main(void){
     int rc;
     // DiaryObjectの作成
     DiaryObj d = {
-        "2026/05/5",
-        "タイトル:ガンバ",
+        "2026/05/14",
+        "タイトル:接続テスト",
         "今日の中身",
         "20:20",
         "20:40"
@@ -71,11 +71,11 @@ int main(void){
     }
 
     // insert
-    // rc = insertDiaryTable(db,&d);
-    // if(rc!=SQLITE_DONE){
-    //     fprintf(stderr,"insertDiaryTable failed: %d\n",rc);
-    //     return(1);
-    // }
+    rc = insertDiaryTable(db,&d);
+    if(rc!=SQLITE_DONE){
+        fprintf(stderr,"insertDiaryTable failed: %d\n",rc);
+        return(1);
+    }
     // rc = insertToDoTable(db,&t);
     // if(rc!=SQLITE_DONE){
     //     fprintf(stderr,"insertDiaryTable failed: %d\n",rc);

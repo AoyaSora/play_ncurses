@@ -206,7 +206,7 @@ int selectDiaryByDate(sqlite3* db, DiaryObj* d){
     }
     
     sqlite3_finalize(stmt);
-    return rc;
+    return SQLITE_OK;
 }
 // 日付を引数に持ち，その日のtaskの内容を全て返す
 int selectToDoByDate(sqlite3* db,const char* date,ToDoObj t[],int maxCount){

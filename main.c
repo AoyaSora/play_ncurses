@@ -258,22 +258,22 @@ int dbEvent(DBFuncType num, AppContent appCon){
             selectDiaryByDate(appCon.db, appCon.diary);
             break;
         case SELECT_TODO_BYDATE:
-            selectToDoByDate(appCon.db,t->date, todos[], maxCount);
+            selectToDoByDate(appCon.db,appCon.todos->date, appCon.todos, TODO_MAX);
             break;
         case UPDATE_DIARY_BYDATE:
-            updateDiary(appCon.db, d);
+            updateDiary(appCon.db, appCon.diary);
             break;
         case UPDATE_TODO_BYDATE:
-            updateToDo(appCon.db, t);
+            updateToDo(appCon.db, appCon.todos);
             break;
         case UPDATE_TODO_STATUS:
-            updateToDoStatus(appCon.db, t);
+            updateToDoStatus(appCon.db, appCon.todos);
             break;
         case DELETE_DIARY_BYID:
-            deleteDiaryByID(appCon.db, d);
+            deleteDiaryByID(appCon.db,appCon.diary);
             break;
         case DELETE_TODO_BYID:
-            deleteTodoByID(appCon.db, t);
+            deleteTodoByID(appCon.db, appCon.todos);
             break;
     }
 }

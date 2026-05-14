@@ -4,12 +4,24 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
+#include <sqlite3.h>
+#include "sqliteFunc.h"
+#include <locale.h>
+
 #define MAX_CONTEXT 1024
-// #include "sqliteFunc.h"
+
 /*
 テストしたい機能
+text配列に対して範囲内に表示，テキスト入力，削除に対してカーソルの位置が意図通りにうごく ok
 ・データを入力，データを挿入．
 ・データを入力，データを更新．
+・最初selectでその日のdiaryデータを取得する．ある場合とない場合で処理を変える．
+// ない場合に取得する情報はnullなのか．今引数にdbとdiaryObjの二種類の引数を入れているが，必要なのは日付．
+// 戻り値はrcで関数側でokの場合はSQLITE_OKを返すようにする．
+・更新ボタンを押したときにupdateDiary or insertDiaryTable関数のどちらかに飛べるようにする．
+・削除ボタン
+
 画面遷移はここでは行わない
 
 main screen
@@ -241,7 +253,7 @@ void DrawText(Cobj* Cobj, textObj* textObj){
         }
         // 文字の更新
 }
-void InitTextObj(textObj* textObj,int x,int y, int w, int h, char content[MAX_CONTEXT]){
+void InitTextObj(textObj* textObj,int x,int y, int w, int h, char content[MAX_CONTEXT-1]){
     textObj->x = x;
     textObj->y = y;
     textObj->w = w;
@@ -254,6 +266,9 @@ int main(){
     int input;
     int w,h;
     textObj tObj;
+    DiaryObj dObj;
+    int rc;
+    sqlite3 *db;
 
     /* curses の設定 */
 	initscr();
@@ -263,11 +278,44 @@ int main(){
 	keypad(stdscr, TRUE);	// カーソルキーを使用可能にする
     start_color();
     refresh();
-    char text[] = "Hello,world. Nice to see you";
+    // 時間取得
+    char buf[128];// 時間の文字列buffer
+    time_t t = time(NULL);// 基準時刻取得
+    struct tm *local = localtime(&t);
+    strftime(buf, sizeof(buf),"%Y/%m/%d",local);//%H:%M:%S %A
+    // 1.DiaryObjを作成．その日付にstrftimeで作成した文字列を入れる
+    strcpy(dObj.date, buf);
+    // 2.dbをopenする
+    rc = sqlite3_open("testDB.db", &db);
+    if(rc){
+        fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(db));
+        sqlite3_close(db);
+        return(1);
+    }
+    rc = createTable(db,"diary","id INTEGER PRIMARY KEY, date TEXT, title TEXT, content TEXT, created_at TEXT, updated_at TEXT");
+    if(rc!=SQLITE_OK){
+        fprintf(stderr,"createTable failed: %d\n",rc);
+        return(1);
+    }
+    // 3.select関数の引数に与える．
+    rc = selectDiaryByDate(db, &dObj);
+    if(rc!=SQLITE_OK){
+        fprintf(stderr,"insertDiaryTable failed: %d\n",rc);
+        return(1);
+    }
+    // 4.クローズ
+    sqlite3_close(db); 
+    // 初期化
+    char text[MAX_CONTEXT] ="あいおうえ";
+    // printf("date:%s\n", dObj.date);
+// printf("title:%s\n", dObj.title);
+// printf("content:%s\n", dObj.content);
+    // strcpy(text,dObj.content);
     InitTextObj(&tObj,2,2,10,10,text);
     InitCobj(&c,0,0,0,0);
     // viewText(&tObj);
 
+    
     timeout(16);
     while(1){
         // erase();
