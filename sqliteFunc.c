@@ -180,7 +180,7 @@ int deleteTodoByID(sqlite3* db,ToDoObj* t){
 // 日付を引数に持ちその日の日記構造体を返す
 int selectDiaryByDate(sqlite3* db, DiaryObj* d){
     sqlite3_stmt* stmt;
-    const char* sql = "SELECT date, title, content, created_at, updated_at FROM diary WHERE date=? ;";
+    const char* sql = "SELECT id, date, title, content, created_at, updated_at FROM diary WHERE date=? ;";
     int rc;
 
     rc = sqlite3_prepare_v2(db,sql,-1,&stmt,NULL);
@@ -193,15 +193,16 @@ int selectDiaryByDate(sqlite3* db, DiaryObj* d){
     if(rc == SQLITE_ROW){
         const unsigned char* text;  // qlite3_column_textの返り血がconst unsigned char*なのでこの型
         // 下のstrcpyでnullが入らないようにするための処理
-        text= sqlite3_column_text(stmt,0);
+        d->id = sqlite3_column_int(stmt,0);
+        text= sqlite3_column_text(stmt,1);
         snprintf(d->date, sizeof(d->date), "%s",text ? (const char*)text : "");        
-        text = sqlite3_column_text(stmt,1);
+        text = sqlite3_column_text(stmt,2);
         snprintf(d->title, sizeof(d->title), "%s",text ? (const char*)text : "");        
-        text= sqlite3_column_text(stmt,2);
+        text= sqlite3_column_text(stmt,3);
         snprintf(d->content, sizeof(d->content), "%s",text ? (const char*)text : "");        
-        text = sqlite3_column_text(stmt,3);
-        snprintf(d->created_at, sizeof(d->created_at), "%s",text ? (const char*)text : "");        
         text = sqlite3_column_text(stmt,4);
+        snprintf(d->created_at, sizeof(d->created_at), "%s",text ? (const char*)text : "");        
+        text = sqlite3_column_text(stmt,5);
         snprintf(d->updated_at, sizeof(d->updated_at), "%s",text ? (const char*)text : "");  
         
         rc = SQLITE_OK;

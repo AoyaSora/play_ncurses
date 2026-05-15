@@ -284,7 +284,7 @@ int InitTextObj(textObj* textObj,int x,int y, int w, int h, AppContent* appObj){
     if(rc == SQLITE_NOTFOUND){// 日付の内容が見つからない場合
         // ゴミが入って処理が変にならないように初期化
         strcpy(appObj->diary->title,"");
-        strcpy(appObj->diary->content,"");
+        strcpy(appObj->diary->content,"sampleText");
         strcpy(appObj->diary->created_at,"");// updateの時にcreated_atが""ならcreated_atとupdated_atも変える
         strcpy(appObj->diary->updated_at,"");
     }else if(rc!=SQLITE_OK){
@@ -335,10 +335,44 @@ int main(){
         // mvprintw(21,21,"main KEY_BACK:%d",KEY_DC);
 
         if(input=='q') break;
+        else if(input=='\n'){
+           // updatediary
+           // if (created_at =='') updateでcreated_atとupdated_atどっちも変える
+           // else updateでcontentとtitle，updatedを変える
+           if(strcmp(dObj.created_at,"")){
+                // 時間取得
+                char timeBuf[128];// 時間の文字列timeBuffer
+                time_t t = time(NULL);// 基準時刻取得
+                struct tm *local = localtime(&t);
+                strftime(timeBuf, sizeof(timeBuf),"%H:%M:%S",local);// %Y/%m/%d%A
+                
+                //dobj更新
+                strcpy(dObj.created_at, timeBuf);
+                strcpy(dObj.updated_at, timeBuf);
+                strcpy(dObj.content, tObj.content);
+
+                //db更新
+                rc = sqlite3_open("testDB.db", &appObj.db);
+                if(rc){
+                    fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj.db));
+                    sqlite3_close(appObj.db);
+                    return(1);
+                }
+
+                rc = updateDiary(appObj.db, &dObj);
+                if(rc != SQLITE_DONE){
+                    fprintf(stderr, "can't updateDiary: %s\n", sqlite3_errmsg(appObj.db));
+                    sqlite3_close(appObj.db);
+                    return(1);
+                }
+                // 4.クローズ
+                sqlite3_close(appObj.db); 
+                // break;
+           }
+        }
         // データ変更
         MoveCursor(&c);
         UpdateText(&c,&tObj,input);
-
         //描画
         DrawText(&c, &tObj);
         DrawCursor(&c);
