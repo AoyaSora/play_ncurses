@@ -7,7 +7,6 @@
 #include <time.h>
 #include <sqlite3.h>
 #include "sqliteFunc.h"
-#include <locale.h>
 
 #define MAX_CONTEXT 1024
 
@@ -16,7 +15,7 @@
 text配列に対して範囲内に表示，テキスト入力，削除に対してカーソルの位置が意図通りにうごく ok
 ・データを入力，データを挿入．
 ・データを入力，データを更新．
-・最初selectでその日のdiaryデータを取得する．ある場合とない場合で処理を変える．
+・最初selectでその日のdiaryデータを取得する．ある場合とない場合で処理を変える．ある場合の取得はできた．
 // ない場合に取得する情報はnullなのか．今引数にdbとdiaryObjの二種類の引数を入れているが，必要なのは日付．
 // 戻り値はrcで関数側でokの場合はSQLITE_OKを返すようにする．
 ・更新ボタンを押したときにupdateDiary or insertDiaryTable関数のどちらかに飛べるようにする．
@@ -212,6 +211,7 @@ void DrawText(Cobj* Cobj, textObj* textObj){
                 move(textObj->y+i,textObj->x);
                 for(int j = 0; j < textObj->w ; j++){
                     addch(' ');
+                    
                 }
             }
             // 描画
@@ -253,12 +253,48 @@ void DrawText(Cobj* Cobj, textObj* textObj){
         }
         // 文字の更新
 }
-void InitTextObj(textObj* textObj,int x,int y, int w, int h, char content[MAX_CONTEXT-1]){
+int InitTextObj(textObj* textObj,int x,int y, int w, int h, AppContent* appObj){
+    int rc;
     textObj->x = x;
     textObj->y = y;
     textObj->w = w;
     textObj->h = h;
-    strcpy(textObj->content,content);
+    // 時間取得
+    char timeBuf[128];// 時間の文字列timeBuffer
+    time_t t = time(NULL);// 基準時刻取得
+    struct tm *local = localtime(&t);
+    strftime(timeBuf, sizeof(timeBuf),"%Y/%m/%d",local);//%H:%M:%S %A
+    // 1.DiaryObjを作成．その日付にstrftimeで作成した文字列を入れる
+    strcpy(appObj->diary->date, timeBuf);
+    // 2.dbをopenする
+    rc = sqlite3_open("testDB.db", &appObj->db);
+    if(rc){
+        fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj->db));
+        sqlite3_close(appObj->db);
+        return(1);
+    }
+    rc = createTable(appObj->db,"diary","id INTEGER PRIMARY KEY, date TEXT, title TEXT, content TEXT, created_at TEXT, updated_at TEXT");
+    if(rc!=SQLITE_OK){
+        fprintf(stderr,"createTable failed: %d\n",rc);
+        return(1);
+    }
+    // 3.select関数の引数に与える．
+    // strcpy(dObj.date,"2026/05/15");
+    rc = selectDiaryByDate(appObj->db, appObj->diary);
+    if(rc == SQLITE_NOTFOUND){// 日付の内容が見つからない場合
+        // ゴミが入って処理が変にならないように初期化
+        strcpy(appObj->diary->title,"");
+        strcpy(appObj->diary->content,"");
+        strcpy(appObj->diary->created_at,"");// updateの時にcreated_atが""ならcreated_atとupdated_atも変える
+        strcpy(appObj->diary->updated_at,"");
+    }else if(rc!=SQLITE_OK){
+        fprintf(stderr,"selectDiaryTable failed: %d\n",rc);
+        return(1);
+    }
+    // 4.クローズ
+    sqlite3_close(appObj->db); 
+    strcpy(textObj->content,appObj->diary->content);
+    return 0;
 }
 
 int main(){
@@ -267,9 +303,9 @@ int main(){
     int w,h;
     textObj tObj;
     DiaryObj dObj;
+    AppContent appObj;
     int rc;
-    sqlite3 *db;
-
+    appObj.diary = &dObj;
     /* curses の設定 */
 	initscr();
 	curs_set(0);		// カーソルを表示する
@@ -278,40 +314,15 @@ int main(){
 	keypad(stdscr, TRUE);	// カーソルキーを使用可能にする
     start_color();
     refresh();
-    // 時間取得
-    char buf[128];// 時間の文字列buffer
-    time_t t = time(NULL);// 基準時刻取得
-    struct tm *local = localtime(&t);
-    strftime(buf, sizeof(buf),"%Y/%m/%d",local);//%H:%M:%S %A
-    // 1.DiaryObjを作成．その日付にstrftimeで作成した文字列を入れる
-    strcpy(dObj.date, buf);
-    // 2.dbをopenする
-    rc = sqlite3_open("testDB.db", &db);
-    if(rc){
-        fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(db));
-        sqlite3_close(db);
-        return(1);
-    }
-    rc = createTable(db,"diary","id INTEGER PRIMARY KEY, date TEXT, title TEXT, content TEXT, created_at TEXT, updated_at TEXT");
-    if(rc!=SQLITE_OK){
-        fprintf(stderr,"createTable failed: %d\n",rc);
-        return(1);
-    }
-    // 3.select関数の引数に与える．
-    rc = selectDiaryByDate(db, &dObj);
-    if(rc!=SQLITE_OK){
-        fprintf(stderr,"insertDiaryTable failed: %d\n",rc);
-        return(1);
-    }
-    // 4.クローズ
-    sqlite3_close(db); 
+
     // 初期化
-    char text[MAX_CONTEXT] ="あいおうえ";
-    // printf("date:%s\n", dObj.date);
+    strcpy(tObj.content,"");
+    // char text[MAX_CONTEXT]={0};
+//     printf("date:%s\n", dObj.date);
 // printf("title:%s\n", dObj.title);
 // printf("content:%s\n", dObj.content);
     // strcpy(text,dObj.content);
-    InitTextObj(&tObj,2,2,10,10,text);
+    rc = InitTextObj(&tObj,2,2,10,10,&appObj); // この関数内でdb開いてtext取得して，closeまでやる
     InitCobj(&c,0,0,0,0);
     // viewText(&tObj);
 

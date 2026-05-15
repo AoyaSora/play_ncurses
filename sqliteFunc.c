@@ -194,19 +194,23 @@ int selectDiaryByDate(sqlite3* db, DiaryObj* d){
         const unsigned char* text;  // qlite3_column_textの返り血がconst unsigned char*なのでこの型
         // 下のstrcpyでnullが入らないようにするための処理
         text= sqlite3_column_text(stmt,0);
-        if(text) snprintf(d->date, sizeof(d->date), "%s",text ? (const char*)text : "");        
+        snprintf(d->date, sizeof(d->date), "%s",text ? (const char*)text : "");        
         text = sqlite3_column_text(stmt,1);
-        if(text) snprintf(d->title, sizeof(d->title), "%s",text ? (const char*)text : "");        
+        snprintf(d->title, sizeof(d->title), "%s",text ? (const char*)text : "");        
         text= sqlite3_column_text(stmt,2);
-        if(text) snprintf(d->content, sizeof(d->content), "%s",text ? (const char*)text : "");        
+        snprintf(d->content, sizeof(d->content), "%s",text ? (const char*)text : "");        
         text = sqlite3_column_text(stmt,3);
-        if(text) snprintf(d->created_at, sizeof(d->created_at), "%s",text ? (const char*)text : "");        
+        snprintf(d->created_at, sizeof(d->created_at), "%s",text ? (const char*)text : "");        
         text = sqlite3_column_text(stmt,4);
-        if(text) snprintf(d->updated_at, sizeof(d->updated_at), "%s",text ? (const char*)text : "");        
+        snprintf(d->updated_at, sizeof(d->updated_at), "%s",text ? (const char*)text : "");  
+        
+        rc = SQLITE_OK;
+    }else if(rc == SQLITE_DONE){
+        rc = SQLITE_NOTFOUND;
     }
     
     sqlite3_finalize(stmt);
-    return SQLITE_OK;
+    return rc;
 }
 // 日付を引数に持ち，その日のtaskの内容を全て返す
 int selectToDoByDate(sqlite3* db,const char* date,ToDoObj t[],int maxCount){

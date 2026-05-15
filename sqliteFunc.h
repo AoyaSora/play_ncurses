@@ -5,7 +5,7 @@
 #include<sqlite3.h>
 #define TODO_MAX 100
 typedef struct {
-    char date[64];
+    char date[128];
     char title[256];
     char content[1024];
     char created_at[64];
@@ -13,7 +13,7 @@ typedef struct {
     int id;
 } DiaryObj;
 typedef struct {
-    char date[64];
+    char date[128];
     char task[64];
     int status;
     int id;
