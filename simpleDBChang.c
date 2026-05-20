@@ -180,8 +180,8 @@ void UpdateText(Cobj* Cobj, textObj* textObj, int input){
             break;
         }
         default :{
-            
-            for(int i =MAX_CONTEXT; i > textObj->cursorIndex; i-- ){
+            // 文字追加の処理ここでabortが起きる
+            for(int i =MAX_CONTEXT-1; i > textObj->cursorIndex; i-- ){
                 textObj->content[i] = textObj->content[i-1];
             }
             textObj->content[textObj->cursorIndex] = input;
