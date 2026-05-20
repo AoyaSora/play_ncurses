@@ -318,10 +318,10 @@ int main(){
     // 初期化
     strcpy(tObj.content,"");
     // char text[MAX_CONTEXT]={0};
-//     printf("date:%s\n", dObj.date);
-// printf("title:%s\n", dObj.title);
-// printf("content:%s\n", dObj.content);
-    // strcpy(text,dObj.content);
+    //     printf("date:%s\n", dObj.date);
+    // printf("title:%s\n", dObj.title);
+    // printf("content:%s\n", dObj.content);
+        // strcpy(text,dObj.content);
     rc = InitTextObj(&tObj,2,2,10,10,&appObj); // この関数内でdb開いてtext取得して，closeまでやる
     InitCobj(&c,0,0,0,0);
     // viewText(&tObj);
@@ -372,7 +372,8 @@ int main(){
         }
         // データ変更
         MoveCursor(&c);
-        UpdateText(&c,&tObj,input);
+        if(input != '\n') UpdateText(&c,&tObj,input);
+
         //描画
         DrawText(&c, &tObj);
         DrawCursor(&c);
