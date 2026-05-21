@@ -303,9 +303,11 @@ int main(){
     int w,h;
     textObj tObj;
     DiaryObj dObj;
+    ToDoObj toObj;
     AppContent appObj;
     int rc;
     appObj.diary = &dObj;
+    appObj.todos[0] = toObj;
     /* curses の設定 */
 	initscr();
 	curs_set(0);		// カーソルを表示する
@@ -335,7 +337,7 @@ int main(){
         // mvprintw(21,21,"main KEY_BACK:%d",KEY_DC);
 
         if(input=='q') break;
-        else if(input=='\n'){
+        else if(input=='o'){
            // updatediary
            // if (created_at =='') updateでcreated_atとupdated_atどっちも変える
            // else updateでcontentとtitle，updatedを変える
@@ -365,10 +367,52 @@ int main(){
                     sqlite3_close(appObj.db);
                     return(1);
                 }
+                strcpy(toObj.date, "2026/05/22");
+                strcpy(toObj.task, "do oi");
+                toObj.id = 0;
+                rc = insertToDoTable(appObj.db, &toObj);
+                if(rc != SQLITE_DONE){
+                    fprintf(stderr, "can't insertDiary: %s\n", sqlite3_errmsg(appObj.db));
+                    sqlite3_close(appObj.db);
+                    return(1);
+                }
                 // 4.クローズ
                 sqlite3_close(appObj.db); 
                 // break;
-           }
+            }
+        }
+        else if(input == '\n'){
+            // insert文テスト
+            // 時間取得
+                char timeBuf[64];// 時間の文字列timeBuffer
+                time_t t = time(NULL);// 基準時刻取得
+                struct tm *local = localtime(&t);
+                strftime(timeBuf, sizeof(timeBuf),"%H:%M:%S",local);// %Y/%m/%d%A
+                
+                //dobj更新
+                strcpy(dObj.date, "2026/05/22");
+                strcpy(dObj.title,"this is titile");
+                strcpy(dObj.content, tObj.content);
+                strcpy(dObj.created_at, timeBuf);
+                strcpy(dObj.updated_at, timeBuf);
+                //db更新
+                rc = sqlite3_open("testDB.db", &appObj.db);
+                if(rc){
+                    fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj.db));
+                    sqlite3_close(appObj.db);
+                    return(1);
+                }
+
+                rc = insertDiaryTable(appObj.db, &dObj);
+                if(rc != SQLITE_DONE){
+                    fprintf(stderr, "can't insertDiaryTable: %s\n", sqlite3_errmsg(appObj.db));
+                    sqlite3_close(appObj.db);
+                    return(1);
+                }
+                // rc = insertToDoTable(appObj.db, &tObj);
+
+                // 4.クローズ
+                sqlite3_close(appObj.db); 
         }
         // データ変更
         MoveCursor(&c);

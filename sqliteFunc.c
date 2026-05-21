@@ -29,7 +29,8 @@ int createTable(sqlite3 *db, const char* tableName, const char* columns){
 
 int insertDiaryTable(sqlite3* db, DiaryObj *d){
     sqlite3_stmt* stmt;
-    const char* sql = "INSERT INTO diary(date,title,content,created_at,updated_at) VALUES (?,?,?,?,?);";
+    const char* sql = "INSERT INTO diary(date,title,content,created_at,updated_at)"
+    "VALUES (?,?,?,?,?);";
     int rc;
 
     // INSERT文の準備
@@ -37,12 +38,32 @@ int insertDiaryTable(sqlite3* db, DiaryObj *d){
     if(rc!= SQLITE_OK) return rc;
     
     // bindで'?'に挿入   
-    sqlite3_bind_text(stmt, 1, d->date, -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 2, d->title, -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 3, d->content, -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 4, d->created_at, -1, SQLITE_STATIC);
-    sqlite3_bind_text(stmt, 5, d->updated_at, -1, SQLITE_STATIC);
-
+    
+    rc = sqlite3_bind_text(stmt, 1, d->date, -1, SQLITE_STATIC);
+    if(rc != SQLITE_OK){
+        sqlite3_finalize(stmt);
+        return rc;
+    }
+    rc = sqlite3_bind_text(stmt, 2, d->title, -1, SQLITE_STATIC);
+    if(rc != SQLITE_OK){
+        sqlite3_finalize(stmt);
+        return rc;
+    }
+    rc = sqlite3_bind_text(stmt, 3, d->content, -1, SQLITE_STATIC);
+    if(rc != SQLITE_OK){
+        sqlite3_finalize(stmt);
+        return rc;
+    }
+    rc = sqlite3_bind_text(stmt, 4, d->created_at, -1, SQLITE_STATIC);
+    if(rc != SQLITE_OK){
+        sqlite3_finalize(stmt);
+        return rc;
+    }
+    rc = sqlite3_bind_text(stmt, 5, d->updated_at, -1, SQLITE_STATIC);
+    if(rc != SQLITE_OK){
+        sqlite3_finalize(stmt);
+        return rc;
+    }
     
     // step実行
     rc = sqlite3_step(stmt);// ここでのエラーは関数を使用するときに書く．
@@ -77,9 +98,21 @@ int insertToDoTable(sqlite3* db, ToDoObj *t){
     rc = sqlite3_prepare_v2(db,sql,-1,&stmt,NULL);
     if(rc!= SQLITE_OK) return rc;
 
-    sqlite3_bind_text(stmt, 1,  t->date, -1,SQLITE_STATIC);
+    rc = sqlite3_bind_text(stmt, 1,  t->date, -1,SQLITE_STATIC);
+    if(rc!=SQLITE_OK) {
+        sqlite3_finalize(stmt);
+        return rc;
+    }
     sqlite3_bind_text(stmt, 2, t->task, -1,SQLITE_STATIC);
+    if(rc!=SQLITE_OK) {
+        sqlite3_finalize(stmt);
+        return rc;
+    }
     sqlite3_bind_int(stmt,3, t->status);
+    if(rc!=SQLITE_OK) {
+        sqlite3_finalize(stmt);
+        return rc;
+    }
 
     rc = sqlite3_step(stmt);
 
@@ -180,7 +213,7 @@ int deleteTodoByID(sqlite3* db,ToDoObj* t){
 // 日付を引数に持ちその日の日記構造体を返す
 int selectDiaryByDate(sqlite3* db, DiaryObj* d){
     sqlite3_stmt* stmt;
-    const char* sql = "SELECT id, date, title, content, created_at, updated_at FROM diary WHERE date=? ;";
+    const char* sql = "SELECT id, date, title, content, created_at, updated_at FROM diary WHERE date=?;";
     int rc;
 
     rc = sqlite3_prepare_v2(db,sql,-1,&stmt,NULL);
@@ -246,3 +279,4 @@ int selectToDoByDate(sqlite3* db,const char* date,ToDoObj t[],int maxCount){
     sqlite3_finalize(stmt);
     return rc;
 }
+
