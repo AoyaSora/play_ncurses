@@ -367,15 +367,6 @@ int main(){
                     sqlite3_close(appObj.db);
                     return(1);
                 }
-                strcpy(toObj.date, "2026/05/22");
-                strcpy(toObj.task, "do oi");
-                toObj.id = 0;
-                rc = insertToDoTable(appObj.db, &toObj);
-                if(rc != SQLITE_DONE){
-                    fprintf(stderr, "can't insertDiary: %s\n", sqlite3_errmsg(appObj.db));
-                    sqlite3_close(appObj.db);
-                    return(1);
-                }
                 // 4.クローズ
                 sqlite3_close(appObj.db); 
                 // break;
@@ -387,12 +378,12 @@ int main(){
                 char timeBuf[64];// 時間の文字列timeBuffer
                 time_t t = time(NULL);// 基準時刻取得
                 struct tm *local = localtime(&t);
-                strftime(timeBuf, sizeof(timeBuf),"%H:%M:%S",local);// %Y/%m/%d%A
-                
+                strftime(timeBuf, sizeof(timeBuf),"%Y/%m/%d",local);// %Y/%m/%d%A
                 //dobj更新
-                strcpy(dObj.date, "2026/05/22");
+                strcpy(dObj.date,timeBuf);
                 strcpy(dObj.title,"this is titile");
                 strcpy(dObj.content, tObj.content);
+                strftime(timeBuf, sizeof(timeBuf),"%H:%M:%S",local);// %Y/%m/%d%A
                 strcpy(dObj.created_at, timeBuf);
                 strcpy(dObj.updated_at, timeBuf);
                 //db更新
