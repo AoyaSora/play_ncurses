@@ -283,6 +283,7 @@ int InitTextObj(textObj* textObj,int x,int y, int w, int h, AppContent* appObj){
     rc = selectDiaryByDate(appObj->db, appObj->diary);
     if(rc == SQLITE_NOTFOUND){// 日付の内容が見つからない場合
         // ゴミが入って処理が変にならないように初期化
+        strcpy(appObj->diary->date,"");
         strcpy(appObj->diary->title,"");
         strcpy(appObj->diary->content,"sampleText");
         strcpy(appObj->diary->created_at,"");// updateの時にcreated_atが""ならcreated_atとupdated_atも変える
@@ -320,7 +321,7 @@ int main(){
     // 初期化
     strcpy(tObj.content,"");
     // char text[MAX_CONTEXT]={0};
-    //     printf("date:%s\n", dObj.date);
+        // printf("date:%s\n", dObj.date);
     // printf("title:%s\n", dObj.title);
     // printf("content:%s\n", dObj.content);
         // strcpy(text,dObj.content);
@@ -333,48 +334,38 @@ int main(){
     while(1){
         // erase();
         getmaxyx(stdscr, h, w);
+        input = 0;
         input = ControlCursor(&c);
-        // mvprintw(21,21,"main KEY_BACK:%d",KEY_DC);
-
-        if(input=='q') break;
-        else if(input=='o'){
-           // updatediary
-           // if (created_at =='') updateでcreated_atとupdated_atどっちも変える
-           // else updateでcontentとtitle，updatedを変える
-           if(strcmp(dObj.created_at,"")){
-                // 時間取得
-                char timeBuf[128];// 時間の文字列timeBuffer
+        if(input != -1) mvprintw(21,21,"main KEY:%02d",input);
+        // 時間取得
+                char timeBuf[64];// 時間の文字列timeBuffer
                 time_t t = time(NULL);// 基準時刻取得
                 struct tm *local = localtime(&t);
-                strftime(timeBuf, sizeof(timeBuf),"%H:%M:%S",local);// %Y/%m/%d%A
-                
+                strftime(timeBuf, sizeof(timeBuf),"%Y/%m/%d",local);// %Y/%m/%d%A
                 //dobj更新
-                strcpy(dObj.created_at, timeBuf);
-                strcpy(dObj.updated_at, timeBuf);
-                strcpy(dObj.content, tObj.content);
-
-                //db更新
-                rc = sqlite3_open("testDB.db", &appObj.db);
-                if(rc){
-                    fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj.db));
-                    sqlite3_close(appObj.db);
-                    return(1);
-                }
-
-                rc = updateDiary(appObj.db, &dObj);
-                if(rc != SQLITE_DONE){
-                    fprintf(stderr, "can't updateDiary: %s\n", sqlite3_errmsg(appObj.db));
-                    sqlite3_close(appObj.db);
-                    return(1);
-                }
-                // 4.クローズ
-                sqlite3_close(appObj.db); 
-                // break;
-            }
-        }
-        else if(input == '\n'){
-            // insert文テスト
+                strcpy(dObj.date,timeBuf);
+        if(input=='q') break;
+        else if(input=='\n')
+        {
             // 時間取得
+            char timeBuf[128];// 時間の文字列timeBuffer
+            time_t t = time(NULL);// 基準時刻取得
+            struct tm *local = localtime(&t);
+            strftime(timeBuf, sizeof(timeBuf),"%Y/%m/%d",local);//%H:%M:%S %A
+            // 1.DiaryObjを作成．その日付にstrftimeで作成した文字列を入れる
+            strcpy(dObj.date, timeBuf);
+            // 2.dbをopenする
+            rc = sqlite3_open("testDB.db", &appObj.db);
+            if(rc){
+                fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj.db));
+                sqlite3_close(appObj.db);
+                return(1);
+            }
+            rc = selectDiaryByDate(appObj.db, appObj.diary);
+            if(rc == SQLITE_NOTFOUND){// 日付の内容が見つからない場合
+                // insert
+                // insert文テスト
+                // 時間取得
                 char timeBuf[64];// 時間の文字列timeBuffer
                 time_t t = time(NULL);// 基準時刻取得
                 struct tm *local = localtime(&t);
@@ -404,6 +395,44 @@ int main(){
 
                 // 4.クローズ
                 sqlite3_close(appObj.db); 
+            }else if(rc!=SQLITE_OK){
+            fprintf(stderr,"selectDiaryTable failed: %d\n",rc);
+            return(1);
+            }else{
+                // update
+                // updatediary
+                // if (created_at =='') updateでcreated_atとupdated_atどっちも変える
+                // else updateでcontentとtitle，updatedを変える
+                    // update
+                // 時間取得
+                char timeBuf[128];// 時間の文字列timeBuffer
+                time_t t = time(NULL);// 基準時刻取得
+                struct tm *local = localtime(&t);
+                strftime(timeBuf, sizeof(timeBuf),"%H:%M:%S",local);// %Y/%m/%d%A
+                
+                //dobj更新
+                // strcpy(dObj.created_at, timeBuf);
+                strcpy(dObj.updated_at, timeBuf);
+                strcpy(dObj.content, tObj.content);
+
+                //db更新
+                rc = sqlite3_open("testDB.db", &appObj.db);
+                if(rc){
+                    fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj.db));
+                    sqlite3_close(appObj.db);
+                    return(1);
+                }
+
+                rc = updateDiary(appObj.db, &dObj);
+                if(rc != SQLITE_DONE){
+                    fprintf(stderr, "can't updateDiary: %s\n", sqlite3_errmsg(appObj.db));
+                    sqlite3_close(appObj.db);
+                    return(1);
+                }
+                // 4.クローズ
+                sqlite3_close(appObj.db); 
+                // break;
+            }
         }
         // データ変更
         MoveCursor(&c);
