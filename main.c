@@ -4,7 +4,11 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #include "sqliteFunc.h"
+// textObjの文字数制限
+#define MAX_CONTEXT 1024
+
 /* 画面の種類　*/
 typedef enum {
     NONE,   // 遷移なし
@@ -69,6 +73,12 @@ typedef struct {
     char eventText[10][100]; // Text of botton maxbotton = 10, max text each botton = 99 
     eventObj event[10]; // event object 
 } UIobj;
+/* テキストフィールド UI*/
+typedef struct{
+    int x,y,w,h;
+    int cursorIndex;
+    char content[MAX_CONTEXT];
+} textObj;
 
 /* カーソルの初期化 */
 void InitCobj(Cobj *obj, double px,double py,double vx,double vy)
@@ -98,7 +108,8 @@ int ControlCursor(Cobj *obj)
         case KEY_DOWN : obj->vy = 1.0; break;
         case KEY_LEFT : obj->vx = -1.0; break;
         case KEY_RIGHT : obj->vx = 1.0; break;
-        case ' ' : return ('s'); break;
+        case 127 : return KEY_BACKSPACE;
+        // case ' ' : return ('s'); break;
         case 'q': case 'Q': case'\e': return ('q'); break;
         default : break;
 
@@ -107,18 +118,23 @@ int ControlCursor(Cobj *obj)
 }
 /* カーソルの移動制御　*/
 /* ここでUI情報の最大値最小値受け取ったら移動範囲を制限できる　*/
-void MoveCursor(Cobj *obj)
+void MoveCursor(Cobj *cobj, UIobj *uiobj)
 {
-	int	w, h;
-	getmaxyx(stdscr, h, w);
-    if((obj->px + obj->vx >= 0) && (obj->px + obj->vx <= w-1 ) && ((mvinch(obj->py, obj->px + obj->vx) & A_CHARTEXT) == ' ' || (mvinch(obj->py, obj->px + obj->vx) & A_CHARTEXT) == '*')) obj->px += obj->vx;
-    if((obj->py + obj->vy >= 0) && (obj->py + obj->vy <= h-1 ) && ((mvinch(obj->py + obj->vy, obj->px) & A_CHARTEXT) == ' ' || (mvinch(obj->py + obj->vy, obj->px) & A_CHARTEXT) =='*')) obj->py += obj->vy;
+	// int	w, h;
+	// getmaxyx(stdscr, h, w);
+    if((cobj->px + cobj->vx > uiobj->x) && (cobj->px + cobj->vx < uiobj->x + uiobj->w-1 )) cobj->px += cobj->vx;
+    if((cobj->py + cobj->vy > uiobj->y) && (cobj->py + cobj->vy < uiobj->y + uiobj->h-1 )) cobj->py += cobj->vy;
 }
 /* カーソルの表示　*/
 void DrawCursor(Cobj *obj)
 {
     move((int)(obj->py),(int)(obj->px));
     addch('>');
+}
+void DrawTextCursor(Cobj *obj)
+{
+    move((int)(obj->py),(int)(obj->px));
+    addch('|');
 }
 
 /* 引数で左上のxyと幅，高さ,共有用のボタン配列を受け取る　*/
@@ -164,7 +180,7 @@ void DrawUI(UIobj *obj, eventObj* event)
    int averageLn = heightLine/obj->bottonNum; //均等にボタンを配置する用
    int textStartWidth = obj->x + 3;
    int c = 0; // textの描画x位置
-//    int bottonPos[heightLine][widthLine]; // 中身の配列
+    //    int bottonPos[heightLine][widthLine]; // 中身の配列
 
    int lnNum=0;
    int overAveLen = 1; // 1 = true 
@@ -181,7 +197,7 @@ void DrawUI(UIobj *obj, eventObj* event)
         }
         if(i < obj->bottonNum -1) { 
             bottonHeight[i+1] = bottonHeight[i] + rowNum;
-            mvprintw(10+i,5,"bottonheihg: %d",bottonHeight[i+1]);
+            // mvprintw(10+i,5,"bottonheihg: %d",bottonHeight[i+1]);
         }
         lnNum += rowNum;
         if(averageLn < rowNum) overAveLen = 0;
@@ -243,9 +259,155 @@ void DrawUI(UIobj *obj, eventObj* event)
         mvaddch(0,0,'c');
     }
 }
+void DrawText(Cobj* Cobj, textObj* textObj){
+        // mvprintw(21,20,"DrawText  c->px:%d, c->py:%d",Cobj->px,Cobj->py);
+        // カーソルの位置に応じてこのtextObj内のカーソルの位置を決める
+        int n=0;
+        // カーソルの移動 移動方向に応じてcontentのどのインデックスの間に' 'を入れるか決める
+        // カーソルの移動と場所で次の'|'の位置nを決め，そこに' 'をおく
+        // カーソルが範囲外
+        if((Cobj->px < textObj->x )|| (Cobj->px > textObj->x +textObj->w-1) || (Cobj->py < textObj->y )|| (Cobj->py > textObj->y +textObj->h) ){
+            // clear
+            for(int i = 0; i < textObj->h; i++){
+                move(textObj->y+i,textObj->x);
+                for(int j = 0; j < textObj->w ; j++){
+                    addch(' ');
+                    
+                }
+            }
+            // 描画
+            for(int i = 0; i < textObj->h; i++){
+                // 改行
+                move(textObj->y+i,textObj->x);
+                for(int j = 0; j < textObj->w; j++){
+                    if(textObj->content[n] == '\0') return;
+                    addch(textObj->content[n]);
+                    n++; 
+                }
+            
+            }
+        }else{      // カーソルが範囲内
+            textObj->cursorIndex = (Cobj->px - textObj->x) + (Cobj->py - textObj->y) * (textObj->w); // cのtext内での位置(indexと対応)
+            mvprintw(23,20,"DrawText  cursorIndex:%03d",textObj->cursorIndex);
+            // clear
+            for(int i = 0; i < textObj->h; i++){
+                move(textObj->y+i,textObj->x);
+                for(int j = 0; j < textObj->w ; j++){
+                    addch(' ');
+                }
+            }
+            // 描画
+            for(int i = 0; i < textObj->h; i++){
+                // 改行
+                move(textObj->y+i,textObj->x);
+                for(int j = 0; j < textObj->w; j++){
+                    if(textObj->content[n] == '\0') return;
+                    if( j + i * (textObj->w) == textObj->cursorIndex){
+                        addch(' ');
+                    }else{
+                        addch(textObj->content[n]);
+                        n++;
+                    }
+                }
+            
+            }
+        }
+        // 文字の更新
+}
+void UpdateText(Cobj* Cobj, textObj* textObj, int input){
+    if((input == KEY_DOWN )|| (input == KEY_UP) || (input == KEY_LEFT )|| (input == KEY_RIGHT)|| (input == -1)) return;
+    // mvprintw(20,20,"UpdateText input:%d",input);
+    // まずtextObj範囲内か
+    if((Cobj->px < textObj->x )|| (Cobj->px > textObj->x +textObj->w) || (Cobj->py < textObj->y )|| (Cobj->py > textObj->y +textObj->h) ) return;
+    //　textObjのtextObj->content[textObj->cursorIndex]で
+    switch (input)
+    {
+        case KEY_BACKSPACE :{
+            /* delete char from textObj->content[x] */
+            int index=0;// '\0'以降の一文字を'\0'にする必要がある．
+            if((Cobj->px == textObj->x)&&(Cobj->py == textObj->y) ) break;
+            while(textObj->content[textObj->cursorIndex+index]!='\0'){
+                textObj->content[textObj->cursorIndex+index -1] = textObj->content[textObj->cursorIndex+index];
+                index++;
+            }
+            textObj->content[textObj->cursorIndex+index-1]=' '; // or '\0'
+            // 左端で１文字消す場合 カーソル位置移動
+            if(Cobj->px == textObj->x ){ 
+                Cobj->px = textObj->x+textObj->w - 1; 
+                Cobj->py -=1;
+            }
+            else{ // 左へカーソル位置移動
+                Cobj->px = Cobj->px - 1;
+            }
+            break;
+        }
+        default :{
+            // 文字追加の処理ここでabortが起きる
+            for(int i =MAX_CONTEXT-1; i > textObj->cursorIndex; i-- ){
+                textObj->content[i] = textObj->content[i-1];
+            }
+            textObj->content[textObj->cursorIndex] = input;
+            // 右端に到達したらpx,pyどちらも変更する．そうでない場合はpxをインクリメント
+            if(Cobj->px == textObj->x + textObj->w-1){
+                Cobj->px = textObj->x;
+                Cobj->py += 1;
+            }
+            else{
+                Cobj->px += 1;
+            }
+            break;
+        }
+    }
+}
+int InitTextObj(textObj* textObj,int x,int y, int w, int h, AppContent* appObj){
+    int rc;
+    textObj->x = x;
+    textObj->y = y;
+    textObj->w = w;
+    textObj->h = h;
+    // 時間取得
+    char timeBuf[128];// 時間の文字列timeBuffer
+    time_t t = time(NULL);// 基準時刻取得
+    struct tm *local = localtime(&t);
+    strftime(timeBuf, sizeof(timeBuf),"%Y/%m/%d",local);//%H:%M:%S %A
+    // 1.DiaryObjを作成．その日付にstrftimeで作成した文字列を入れる
+    strcpy(appObj->diary->date, timeBuf);
+    // 2.dbをopenする
+    rc = sqlite3_open("testDB.db", &appObj->db);
+    if(rc){
+        fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj->db));
+        sqlite3_close(appObj->db);
+        return(1);
+    }
+    rc = createTable(appObj->db,"diary","id INTEGER PRIMARY KEY, date TEXT, title TEXT, content TEXT, created_at TEXT, updated_at TEXT");
+    if(rc!=SQLITE_OK){
+        fprintf(stderr,"createTable failed: %d\n",rc);
+        return(1);
+    }
+    // 3.select関数の引数に与える．
+    // strcpy(dObj.date,"2026/05/15");
+    rc = selectDiaryByDate(appObj->db, appObj->diary);
+    if(rc == SQLITE_NOTFOUND){// 日付の内容が見つからない場合
+        // ゴミが入って処理が変にならないように初期化
+        strcpy(appObj->diary->date,"");
+        strcpy(appObj->diary->title,"");
+        strcpy(appObj->diary->content,"sampleText");
+        strcpy(appObj->diary->created_at,"");// updateの時にcreated_atが""ならcreated_atとupdated_atも変える
+        strcpy(appObj->diary->updated_at,"");
+    }else if(rc!=SQLITE_OK){
+        fprintf(stderr,"selectDiaryTable failed: %d\n",rc);
+        return(1);
+    }
+    // 4.クローズ
+    sqlite3_close(appObj->db); 
+    strcpy(textObj->content,appObj->diary->content);
+    return 0;
+}
+
+
 
 // 問題点 引数に指定する際使わないものが出てくる．
-int dbEvent(DBFuncType num, AppContent appCon){
+void dbEvent(DBFuncType num, AppContent appCon){
     int rc;
     switch(num) {
         case INSERT_DIARY_BYDATE:
@@ -275,6 +437,8 @@ int dbEvent(DBFuncType num, AppContent appCon){
         case DELETE_TODO_BYID:
             deleteTodoByID(appCon.db, appCon.todos);
             break;
+        case DB_EVENT_NONE:
+            break;
     }
 }
 
@@ -285,29 +449,29 @@ int MainScreen()
     int w,h;
     char input;
 
-
     //初期設定
     InitCobj(&c,4,4, 0.0, 0.0);
 
     //構造体の初期化
-    eventObj eventData[2] = {
-        {0, 0, "start the lainbow another way",TO_DO, DB_EVENT_NONE},
-        {0, 0, "next situation xxx", NONE, DB_EVENT_NONE}
+    eventObj eventData[3] = {
+        {0, 0, "to do",TO_DO, DB_EVENT_NONE},
+        {0, 0, "record", RECORD,DB_EVENT_NONE},
+        {0, 0, "none", NONE, DB_EVENT_NONE}
     };
 
     timeout(16);    // fps:60くらい
     while(1){
         erase();
         refresh();
-            getmaxyx(stdscr, h, w);
+        getmaxyx(stdscr, h, w);
 
-        InitUIobj(&menu,0,0,w,h,2,eventData);
+        InitUIobj(&menu,0,0,w,h, sizeof(eventData)/sizeof(eventData[0]),eventData);
         DrawUI(&menu,eventData);
         DrawCursor(&c);
         // キー入力
         input = ControlCursor(&c);
         if (input == 'q') return END;
-        else if(input == 's'){
+        else if(input == ' '){
             //    if(eventPos[c.py][c.px] == '*') {
                 for(int i = 0; i < sizeof(eventData)/sizeof(eventData[0]); i++ ) {
                     if(eventData[i].x == c.px && eventData[i].y == c.py){
@@ -325,7 +489,7 @@ int MainScreen()
                 }
             // }
         }
-        MoveCursor(&c);
+        MoveCursor(&c,&menu);
         // 動作速度調節
         usleep(20000);
     }
@@ -360,7 +524,7 @@ int TO_DOScreen(){
         // キー入力
         input = ControlCursor(&c);
         if (input == 'q') return END;
-        else if(input == 's'){
+        else if(input == ' '){
             //    if(eventPos[c.py][c.px] == '*') {
                 for(int i = 0; i < sizeof(eventData)/sizeof(eventData[0]); i++ ) {
                     if(eventData[i].x == c.px && eventData[i].y == c.py){
@@ -369,15 +533,171 @@ int TO_DOScreen(){
                 }
             // }
         }
-        MoveCursor(&c);
+        MoveCursor(&c,&todoUI);
         // 動作速度調節
         usleep(20000);
     }
     return 0;
 
 }
-// スクリーン関数の引数だけ変えてあげて表示でもいい now: mainScreen TO_DOScreen関数
+int diaryScreen(void)
+{
+    Cobj c;
+    int input;
+    int w,h;
+    UIobj diaryUI;
+    textObj tObj;
+    DiaryObj dObj;
+    ToDoObj toObj;
+    AppContent appObj;
+    int rc;
+    appObj.diary = &dObj;
+    appObj.todos[0] = toObj;
+    int contentSize;
 
+    // time relation
+    char timeBuf[64];
+    time_t t;
+    struct tm *local;
+
+    // event
+    //構造体の初期化
+    eventObj eventData[0] = {
+        // {0, 0, "to do",TO_DO, DB_EVENT_NONE},
+        // {0, 0, "record", RECORD,DB_EVENT_NONE},
+        // {0, 0, "none", NONE, DB_EVENT_NONE}
+    };
+    refresh();
+
+    // 初期化
+    strcpy(tObj.content,"");
+    // char text[MAX_CONTEXT]={0};
+        // printf("date:%s\n", dObj.date);
+    // printf("title:%s\n", dObj.title);
+    // printf("content:%s\n", dObj.content);
+        // strcpy(text,dObj.content);
+    // textObj Initialization
+    InitUIobj(&diaryUI,0,0,20,20,0,eventData);
+    rc = InitTextObj(&tObj,diaryUI.x+1,diaryUI.y+1,diaryUI.w-2,diaryUI.h-2,&appObj); // この関数内でdb開いてtext取得して，closeまでやる
+    // contentSize = sizeof(dObj.content)/sizeof(dObj.content[0]);
+    // mvprintw(19,21,"diary contentSize:%d",contentSize);
+
+    InitCobj(&c,tObj.x,tObj.y,0,0);
+    // viewText(&tObj);
+    // erase();
+    // refresh();
+    timeout(16);
+    while(1){
+        getmaxyx(stdscr, h, w);
+        // input = 0;
+        input = ControlCursor(&c);
+        if(input != -1) mvprintw(21,21,"diaryScreen KEY:%02d",input);
+        // 時間取得
+                t = time(NULL);// 基準時刻取得
+                local = localtime(&t);
+                strftime(timeBuf, sizeof(timeBuf),"%Y/%m/%d",local);// %Y/%m/%d%A
+                //dobj更新
+                strcpy(dObj.date,timeBuf);
+        if(input=='\n')
+        {
+            // 時間取得
+            t = time(NULL);// 基準時刻取得
+            local = localtime(&t);
+            strftime(timeBuf, sizeof(timeBuf),"%Y/%m/%d",local);//%H:%M:%S %A
+            // 1.DiaryObjを作成．その日付にstrftimeで作成した文字列を入れる
+            strcpy(dObj.date, timeBuf);
+            // 2.dbをopenする
+            rc = sqlite3_open("testDB.db", &appObj.db);
+            if(rc){
+                fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj.db));
+                sqlite3_close(appObj.db);
+                return(1);
+            }
+            rc = selectDiaryByDate(appObj.db, appObj.diary);
+            if(rc == SQLITE_NOTFOUND){// 日付の内容が見つからない場合
+                // insert
+                // insert文テスト
+                // 時間取得
+                char timeBuf[64];// 時間の文字列timeBuffer
+                time_t t = time(NULL);// 基準時刻取得
+                struct tm *local = localtime(&t);
+                strftime(timeBuf, sizeof(timeBuf),"%Y/%m/%d",local);// %Y/%m/%d%A
+                //dobj更新
+                strcpy(dObj.date,timeBuf);
+                strcpy(dObj.title,"this is titile");
+                strcpy(dObj.content, tObj.content);
+                strftime(timeBuf, sizeof(timeBuf),"%H:%M:%S",local);// %Y/%m/%d%A
+                strcpy(dObj.created_at, timeBuf);
+                strcpy(dObj.updated_at, timeBuf);
+                //db更新
+                rc = sqlite3_open("testDB.db", &appObj.db);
+                if(rc){
+                    fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj.db));
+                    sqlite3_close(appObj.db);
+                    return(1);
+                }
+
+                rc = insertDiaryTable(appObj.db, &dObj);
+                if(rc != SQLITE_DONE){
+                    fprintf(stderr, "can't insertDiaryTable: %s\n", sqlite3_errmsg(appObj.db));
+                    sqlite3_close(appObj.db);
+                    return(1);
+                }
+                // rc = insertToDoTable(appObj.db, &tObj);
+
+                // 4.クローズ
+                sqlite3_close(appObj.db); 
+            }else if(rc!=SQLITE_OK){
+            fprintf(stderr,"selectDiaryTable failed: %d\n",rc);
+            return(1);
+            }else{
+                // update
+                // updatediary
+                // if (created_at =='') updateでcreated_atとupdated_atどっちも変える
+                // else updateでcontentとtitle，updatedを変える
+                    // update
+                // 時間取得
+                t = time(NULL);// 基準時刻取得
+                local = localtime(&t);
+                strftime(timeBuf, sizeof(timeBuf),"%H:%M:%S",local);// %Y/%m/%d%A
+                
+                //dobj更新
+                // strcpy(dObj.created_at, timeBuf);
+                strcpy(dObj.updated_at, timeBuf);
+                strcpy(dObj.content, tObj.content);
+
+                //db更新
+                rc = sqlite3_open("testDB.db", &appObj.db);
+                if(rc){
+                    fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj.db));
+                    sqlite3_close(appObj.db);
+                    return(1);
+                }
+
+                rc = updateDiary(appObj.db, &dObj);
+                if(rc != SQLITE_DONE){
+                    fprintf(stderr, "can't updateDiary: %s\n", sqlite3_errmsg(appObj.db));
+                    sqlite3_close(appObj.db);
+                    return(1);
+                }
+                // 4.クローズ
+                sqlite3_close(appObj.db); 
+                // break;
+            }
+        }
+        // データ変更
+        MoveCursor(&c,&diaryUI);
+        if(input != '\n') UpdateText(&c,&tObj,input);
+
+        //描画
+        DrawText(&c, &tObj);
+        DrawTextCursor(&c);
+        DrawUI( &diaryUI, eventData);
+        refresh();
+        usleep(20000);
+    }
+    return 0;
+}
 int main(void)
 {
     /* curses の設定 */
@@ -402,6 +722,9 @@ int main(void)
                 nextScreen = TO_DOScreen();
                 break;
             case RECORD:
+                erase();
+                refresh();
+                nextScreen = diaryScreen();
                 break;
             case END:
                 /* 終了 */
