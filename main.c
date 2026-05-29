@@ -418,12 +418,12 @@ int InitTextObj(textObj* textObj,int x,int y, int w, int h, AppContent* appObj){
     if(rc){
         fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj->db));
         sqlite3_close(appObj->db);
-        return(10);
+        return(-1);
     }
     rc = createTable(appObj->db,"diary","id INTEGER PRIMARY KEY, date TEXT, title TEXT, content TEXT, created_at TEXT, updated_at TEXT");
     if(rc!=SQLITE_OK){
         fprintf(stderr,"createTable failed: %d\n",rc);
-        return(10);
+        return(-1);
     }
     // 3.select関数の引数に与える．
     // strcpy(dObj.date,"2026/05/15");
@@ -437,7 +437,7 @@ int InitTextObj(textObj* textObj,int x,int y, int w, int h, AppContent* appObj){
         strcpy(appObj->diary->updated_at,"");
     }else if(rc!=SQLITE_OK){
         fprintf(stderr,"selectDiaryTable failed: %d\n",rc);
-        return(10);
+        return(-1);
     }
     // 4.クローズ
     sqlite3_close(appObj->db); 
@@ -563,24 +563,29 @@ int TO_DOScreen(){
      if(rc){
         fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj.db));
         sqlite3_close(appObj.db);
-        return(10);
+        return(-1);
     }
     // select diary table where date=""
     rc = selectToDoByDate(appObj.db, timeBuf, todos, TODO_MAX, &appObj.todoCount);
     if(rc == SQLITE_NOTFOUND){
-        fprintf(stderr, "not found selectTodo: %s\n", sqlite3_errmsg(appObj.db));
-        sqlite3_close(appObj.db);
-        return(10);
+       appObj.todoCount = 0;
     }
     else if(rc!=SQLITE_OK){
         fprintf(stderr,"selectDiaryTable failed: %d\n",rc);
-        return(10);
+        sqlite3_close(appObj.db);
+        return(-1);
     }
     // store tasks to struct
 
     for(int i = 0; i < appObj.todoCount; i++)
     {
-        strcpy(eventData[i].text,todos[i].task);
+        // strcpy(eventData[i].text,todos[i].task);
+
+        strncpy(eventData[i].text,
+        todos[i].task,
+        sizeof(eventData[i].text) - 1);
+
+eventData[i].text[sizeof(eventData[i].text) - 1] = '\0';
     }
     sqlite3_close(appObj.db); 
     // store end main and end button.
@@ -697,7 +702,7 @@ int diaryScreen(void)
                             if(rc){
                                 fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj.db));
                                 sqlite3_close(appObj.db);
-                                return(10);
+                                return(-1);
                             }
                             rc = selectDiaryByDate(appObj.db, appObj.diary);
                             if(rc == SQLITE_NOTFOUND){// 日付の内容が見つからない場合
@@ -720,14 +725,14 @@ int diaryScreen(void)
                                 if(rc){
                                     fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj.db));
                                     sqlite3_close(appObj.db);
-                                    return(10);
+                                    return(-1);
                                 }
 
                                 rc = insertDiaryTable(appObj.db, &dObj);
                                 if(rc != SQLITE_DONE){
                                     fprintf(stderr, "can't insertDiaryTable: %s\n", sqlite3_errmsg(appObj.db));
                                     sqlite3_close(appObj.db);
-                                    return(10);
+                                    return(-1);
                                 }
                                 // rc = insertToDoTable(appObj.db, &tObj);
 
@@ -735,7 +740,7 @@ int diaryScreen(void)
                                 sqlite3_close(appObj.db); 
                             }else if(rc!=SQLITE_OK){
                             fprintf(stderr,"selectDiaryTable failed: %d\n",rc);
-                            return(10);
+                            return(-1);
                             }else{
                                 // update
                                 // updatediary
@@ -757,14 +762,14 @@ int diaryScreen(void)
                                 if(rc){
                                     fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj.db));
                                     sqlite3_close(appObj.db);
-                                    return(10);
+                                    return(-1);
                                 }
 
                                 rc = updateDiary(appObj.db, &dObj);
                                 if(rc != SQLITE_DONE){
                                     fprintf(stderr, "can't updateDiary: %s\n", sqlite3_errmsg(appObj.db));
                                     sqlite3_close(appObj.db);
-                                    return(10);
+                                    return(-1);
                                 }
                                 // 4.クローズ
                                 sqlite3_close(appObj.db); 
@@ -823,8 +828,8 @@ int main(void)
                 refresh();
                 nextScreen = diaryScreen();
                 break;
-            case 10:
-                fprintf(stderr,"error 10\n");
+            case -1:
+                fprintf(stderr,"error \n");
             case END:
                 /* 終了 */
                 endwin();

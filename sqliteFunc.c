@@ -259,8 +259,7 @@ int selectToDoByDate(sqlite3* db,const char date[128],ToDoObj t[],int maxCount, 
     sqlite3_bind_text(stmt, 1, date, -1, SQLITE_STATIC);
 
     // その日にやる事複数件ある場合
-    rc = sqlite3_step(stmt);
-    while (rc == SQLITE_ROW)
+    while ((rc = sqlite3_step(stmt)) == SQLITE_ROW)
     {
         /* code */
         if(count >= maxCount) break;
@@ -277,8 +276,9 @@ int selectToDoByDate(sqlite3* db,const char date[128],ToDoObj t[],int maxCount, 
 
         count++;
     }
-    getCount = &count;
+    *getCount = count;
     sqlite3_finalize(stmt);
+    if(rc == SQLITE_DONE) return SQLITE_OK;
     return rc;
 }
 
