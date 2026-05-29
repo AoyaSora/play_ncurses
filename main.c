@@ -259,16 +259,17 @@ void DrawBtnOutLineUI(UIobj *obj, eventObj* event)
                 switch(event[i].task_status)
                 {
                     case TASK_UNTOUCH:
-                    addch('-');
+                    addch('!');
                     break;
                     case TASK_PROGRESS:
-                    addch('^');
+                    addch('~');
                     break;
                     case TASK_DONE:
-                    addch('+');
+                    addch('#');
                     break;
                     default:
-                    addch('&');
+                    // addch(' ');
+                    break;
                 }
             }
             // ButtonPos[obj->y+bottonHeight[i]][obj->x+1] = '*'; //共通の配列にボタンを追加
@@ -571,7 +572,6 @@ int TO_DOScreen(){
     // 構造体の初期化
     ToDoObj todos[TODO_MAX];
     eventObj eventData[100];
-
     //初期設定
     getmaxyx(stdscr, h, w);
     InitCobj(&c,4,4, 0.0, 0.0);
@@ -608,15 +608,16 @@ int TO_DOScreen(){
     }
     sqlite3_close(appObj.db); 
     // store end main and end button.
-
-
+    strncpy(eventData[appObj.todoCount].text, "back",sizeof(eventData[appObj.todoCount].text) -1);
+    eventData[appObj.todoCount].text[sizeof(eventData[appObj.todoCount].text) -1] = '\0';
+    eventData[appObj.todoCount].nextState = MAIN;
     timeout(17);
     while(1){
         erase();
         refresh();
-            mvprintw(10,10,"todoscreen todoCount:%d",appObj.todoCount);
+            // mvprintw(10,10,"eventData[appObj.todoCount].text:%d",appObj.todoCount);
 
-        InitUIobj(&todoUI,0,0,w,h,appObj.todoCount,eventData);
+        InitUIobj(&todoUI,0,0,w,h,appObj.todoCount+1,eventData);
         DrawBtnOutLineUI(&todoUI,eventData);
         DrawCursor(&c);
 
@@ -645,7 +646,7 @@ int TO_DOScreen(){
 
                         }
                         // backbutton
-                        if(eventData[i].nextState != NONE) return eventData[i].nextState;
+                        if(eventData[i].nextState == MAIN) return eventData[i].nextState;
                     }
                 }
             // }
