@@ -254,7 +254,7 @@ void DrawBtnOutLineUI(UIobj *obj, eventObj* event)
         for(int i=0; i < obj->bottonNum; i++){
             //ボタン描画
             mvaddch( obj->y+bottonHeight[i], obj->x+1, '*');
-            if(obj->event->task_status != NONE_TASK_STATUS)
+            if(event[i].task_status != NONE_TASK_STATUS)
             {
                 switch(event[i].task_status)
                 {
@@ -315,6 +315,7 @@ void DrawBtnOutLineUI(UIobj *obj, eventObj* event)
         }
     }else{  // そのままやるとオーバーする場合 
         mvaddch(0,0,'c');
+        // show "too small"
     }
 }
 void DrawText(Cobj* Cobj, textObj* textObj){
@@ -597,18 +598,19 @@ int TO_DOScreen(){
     for(int i = 0; i < appObj.todoCount; i++)
     {
         // strcpy(eventData[i].text,todos[i].task);
-
-        strncpy(eventData[i].text,
-        todos[i].task,
-        sizeof(eventData[i].text) - 1);
-
+        // eventData.text <- task text
+        strncpy(eventData[i].text, todos[i].task, sizeof(eventData[i].text) - 1);
         eventData[i].text[sizeof(eventData[i].text) - 1] = '\0';
+        // eventData.
+        eventData[i].task_status = todos[i].status;
+
+
     }
     sqlite3_close(appObj.db); 
     // store end main and end button.
 
 
-    timeout(0);
+    timeout(17);
     while(1){
         erase();
         refresh();
@@ -640,7 +642,6 @@ int TO_DOScreen(){
                             case TASK_DONE:
                                 eventData[i].task_status = TASK_UNTOUCH;
                                 break;
-
 
                         }
                         // backbutton
