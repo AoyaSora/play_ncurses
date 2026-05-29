@@ -92,7 +92,7 @@ int insertDiaryTable(sqlite3* db, DiaryObj *d){
 
 int insertToDoTable(sqlite3* db, ToDoObj *t){
     sqlite3_stmt* stmt;
-    const char* sql = "INSERT INTO toDo(date,task,status) VALUES (?,?,?)";
+    const char* sql = "INSERT INTO toDo(date,task,status) VALUES (?,?,?);";
     int rc;
 
     rc = sqlite3_prepare_v2(db,sql,-1,&stmt,NULL);
@@ -247,9 +247,9 @@ int selectDiaryByDate(sqlite3* db, DiaryObj* d){
     return rc;
 }
 // 日付を引数に持ち，その日のtaskの内容を全て返す
-int selectToDoByDate(sqlite3* db,const char* date,ToDoObj t[],int maxCount){
+int selectToDoByDate(sqlite3* db,const char date[128],ToDoObj t[],int maxCount, int *getCount){
     sqlite3_stmt* stmt;
-    const char* sql = "SELECT date, task, status FROM toDo WHERE date=? ;";
+    const char* sql = "SELECT date, task, status FROM toDo WHERE date=?;";
     int rc;
     int count=0;
 
@@ -259,7 +259,8 @@ int selectToDoByDate(sqlite3* db,const char* date,ToDoObj t[],int maxCount){
     sqlite3_bind_text(stmt, 1, date, -1, SQLITE_STATIC);
 
     // その日にやる事複数件ある場合
-    while ((rc = sqlite3_step(stmt) == SQLITE_ROW))
+    rc = sqlite3_step(stmt);
+    while (rc == SQLITE_ROW)
     {
         /* code */
         if(count >= maxCount) break;
@@ -276,6 +277,7 @@ int selectToDoByDate(sqlite3* db,const char* date,ToDoObj t[],int maxCount){
 
         count++;
     }
+    getCount = &count;
     sqlite3_finalize(stmt);
     return rc;
 }

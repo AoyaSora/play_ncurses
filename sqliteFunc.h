@@ -23,6 +23,7 @@ typedef struct{
     sqlite3* db;
     DiaryObj* diary;
     ToDoObj todos[TODO_MAX];
+    int todoCount;
 } AppContent;
 
 
@@ -35,5 +36,5 @@ int updateToDoStatus(sqlite3* db, ToDoObj* t);
 int deleteDiaryByID(sqlite3* db, DiaryObj* d);
 int deleteTodoByID(sqlite3* db, ToDoObj* t);
 int selectDiaryByDate(sqlite3* db, DiaryObj* d);
-int selectToDoByDate(sqlite3* db,const char* date,ToDoObj t[],int maxCount);
+int selectToDoByDate(sqlite3* db,const char* date,ToDoObj t[],int maxCount,int* count);
 #endif
