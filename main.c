@@ -254,6 +254,23 @@ void DrawBtnOutLineUI(UIobj *obj, eventObj* event)
         for(int i=0; i < obj->bottonNum; i++){
             //ボタン描画
             mvaddch( obj->y+bottonHeight[i], obj->x+1, '*');
+            if(obj->event->task_status != NONE_TASK_STATUS)
+            {
+                switch(event[i].task_status)
+                {
+                    case TASK_UNTOUCH:
+                    addch('-');
+                    break;
+                    case TASK_PROGRESS:
+                    addch('^');
+                    break;
+                    case TASK_DONE:
+                    addch('+');
+                    break;
+                    default:
+                    addch('&');
+                }
+            }
             // ButtonPos[obj->y+bottonHeight[i]][obj->x+1] = '*'; //共通の配列にボタンを追加
             // iven管理
             event[i].x = obj->x+1;
@@ -585,7 +602,7 @@ int TO_DOScreen(){
         todos[i].task,
         sizeof(eventData[i].text) - 1);
 
-eventData[i].text[sizeof(eventData[i].text) - 1] = '\0';
+        eventData[i].text[sizeof(eventData[i].text) - 1] = '\0';
     }
     sqlite3_close(appObj.db); 
     // store end main and end button.
@@ -608,7 +625,26 @@ eventData[i].text[sizeof(eventData[i].text) - 1] = '\0';
             //    if(eventPos[c.py][c.px] == '*') {
                 for(int i = 0; i < sizeof(eventData)/sizeof(eventData[0]); i++ ) {
                     if(eventData[i].x == c.px && eventData[i].y == c.py){
-                        return eventData[i].nextState;
+                        // change status button
+                        switch(eventData[i].task_status) 
+                        {
+                            case NONE_TASK_STATUS:
+                                eventData[i].task_status = TASK_UNTOUCH;
+                                break;
+                            case TASK_UNTOUCH:
+                                eventData[i].task_status = TASK_PROGRESS;
+                                break;
+                            case TASK_PROGRESS:
+                                eventData[i].task_status = TASK_DONE;
+                                break;
+                            case TASK_DONE:
+                                eventData[i].task_status = TASK_UNTOUCH;
+                                break;
+
+
+                        }
+                        // backbutton
+                        if(eventData[i].nextState != NONE) return eventData[i].nextState;
                     }
                 }
             // }
