@@ -162,17 +162,29 @@ int updateToDo(sqlite3* db, ToDoObj* t){
     sqlite3_finalize(stmt);
     return rc;
 }
-int updateToDoStatus(sqlite3* db, ToDoObj* t){
+int updateToDoStatus(sqlite3* db, ToDoObj t[],int count){
     sqlite3_stmt* stmt;
     const char* sql = "UPDATE toDo SET status=? WHERE id=?;";
     int rc;
     rc = sqlite3_prepare_v2(db,sql,-1,&stmt,NULL);
     if(rc!=SQLITE_OK) return rc;
 
-    sqlite3_bind_int(stmt, 1,t->status);
-    sqlite3_bind_int(stmt, 2,t->id);
+    for(int i = 0; i < count; i++)
+    {
+        sqlite3_bind_int(stmt, 1,t[i].status);
+        sqlite3_bind_int(stmt, 2,t[i].id);
     
-    rc = sqlite3_step(stmt);
+        rc = sqlite3_step(stmt);
+        if(rc != SQLITE_DONE)
+        {
+            sqlite3_finalize(stmt);
+            return rc;
+        }
+        
+        sqlite3_reset(stmt);
+        sqlite3_clear_bindings(stmt);
+    }
+    
 
     sqlite3_finalize(stmt);
     return rc;
@@ -249,7 +261,7 @@ int selectDiaryByDate(sqlite3* db, DiaryObj* d){
 // 日付を引数に持ち，その日のtaskの内容を全て返す
 int selectToDoByDate(sqlite3* db,const char date[128],ToDoObj t[],int maxCount, int *getCount){
     sqlite3_stmt* stmt;
-    const char* sql = "SELECT date, task, status FROM toDo WHERE date=?;";
+    const char* sql = "SELECT id, date, task, status FROM toDo WHERE date=?;";
     int rc;
     int count=0;
 
@@ -263,16 +275,17 @@ int selectToDoByDate(sqlite3* db,const char date[128],ToDoObj t[],int maxCount, 
     {
         /* code */
         if(count >= maxCount) break;
+        t[count].id = sqlite3_column_int(stmt,0);
         const unsigned char* text; 
         // date
-        text = sqlite3_column_text(stmt,0);
+        text = sqlite3_column_text(stmt,1);
         // snprintf(データを出力する記憶域へのポインタ, 出力する文字数，書式を表す文字列へのポインタ，書式に従って出力されるデータ)
         if(text) snprintf(t[count].date, sizeof(t[count].date), "%s",text ? (const char*)text : "");
         // task
-        text = sqlite3_column_text(stmt,1);
+        text = sqlite3_column_text(stmt,2);
         if(text) snprintf(t[count].task, sizeof(t[count].task), "%s",text ? (const char*)text : "");
         // status
-        t[count].status = sqlite3_column_int(stmt, 2);
+        t[count].status = sqlite3_column_int(stmt, 3);
 
         count++;
     }

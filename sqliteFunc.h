@@ -32,7 +32,7 @@ int insertDiaryTable(sqlite3* db, DiaryObj *d);
 int insertToDoTable(sqlite3* db, ToDoObj *t);
 int updateDiary(sqlite3* db, DiaryObj* d);
 int updateToDo(sqlite3* db, ToDoObj* t);
-int updateToDoStatus(sqlite3* db, ToDoObj* t);
+int updateToDoStatus(sqlite3* db, ToDoObj t[], int count);
 int deleteDiaryByID(sqlite3* db, DiaryObj* d);
 int deleteTodoByID(sqlite3* db, ToDoObj* t);
 int selectDiaryByDate(sqlite3* db, DiaryObj* d);

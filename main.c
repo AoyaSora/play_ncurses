@@ -489,7 +489,7 @@ void dbEvent(DBFuncType num, AppContent appCon){
             updateToDo(appCon.db, appCon.todos);
             break;
         case UPDATE_TODO_STATUS:
-            updateToDoStatus(appCon.db, appCon.todos);
+            updateToDoStatus(appCon.db, appCon.todos,appCon.todoCount);
             break;
         case DELETE_DIARY_BYID:
             deleteDiaryByID(appCon.db,appCon.diary);
@@ -603,8 +603,8 @@ int TO_DOScreen(){
         eventData[i].text[sizeof(eventData[i].text) - 1] = '\0';
         // eventData.
         eventData[i].task_status = todos[i].status;
-
-
+        
+        eventData[i].nextState = NONE;
     }
     sqlite3_close(appObj.db); 
     // store end main and end button.
@@ -632,21 +632,45 @@ int TO_DOScreen(){
                         switch(eventData[i].task_status) 
                         {
                             case NONE_TASK_STATUS:
-                                eventData[i].task_status = TASK_UNTOUCH;
+                                // eventData[i].task_status = TASK_UNTOUCH;
+                                // todos[i].status = TASK_UNTOUCH;
                                 break;
                             case TASK_UNTOUCH:
                                 eventData[i].task_status = TASK_PROGRESS;
+                                todos[i].status = TASK_PROGRESS;
                                 break;
                             case TASK_PROGRESS:
                                 eventData[i].task_status = TASK_DONE;
+                                todos[i].status = TASK_DONE;
                                 break;
                             case TASK_DONE:
                                 eventData[i].task_status = TASK_UNTOUCH;
+                                todos[i].status = TASK_UNTOUCH;
                                 break;
-
+                            default:
+                            break;
                         }
                         // backbutton
-                        if(eventData[i].nextState == MAIN) return eventData[i].nextState;
+                        if(eventData[i].nextState == MAIN) 
+                        {
+                            // save status
+                            // update todo
+                            rc =sqlite3_open("testDB.db", &appObj.db);
+                            if(rc)
+                            {
+                                fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj.db));
+                                sqlite3_close(appObj.db);
+                                return(-1);
+                            }
+                            rc = updateToDoStatus(appObj.db, todos,appObj.todoCount);
+                            if(rc != SQLITE_DONE)
+                            {
+                                sqlite3_close(appObj.db);
+                                return (-1);
+                            }
+                            sqlite3_close(appObj.db);
+                            return eventData[i].nextState;
+                        }
                     }
                 }
             // }
@@ -759,12 +783,12 @@ int diaryScreen(void)
                                 strcpy(dObj.created_at, timeBuf);
                                 strcpy(dObj.updated_at, timeBuf);
                                 //db更新
-                                rc = sqlite3_open("testDB.db", &appObj.db);
-                                if(rc){
-                                    fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj.db));
-                                    sqlite3_close(appObj.db);
-                                    return(-1);
-                                }
+                                // rc = sqlite3_open("testDB.db", &appObj.db);
+                                // if(rc){
+                                //     fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj.db));
+                                //     sqlite3_close(appObj.db);
+                                //     return(-1);
+                                // }
 
                                 rc = insertDiaryTable(appObj.db, &dObj);
                                 if(rc != SQLITE_DONE){
