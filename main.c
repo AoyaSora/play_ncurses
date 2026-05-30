@@ -259,13 +259,13 @@ void DrawBtnOutLineUI(UIobj *obj, eventObj* event)
                 switch(event[i].task_status)
                 {
                     case TASK_UNTOUCH:
-                    addch('!');
+                    addstr("untouch");
                     break;
                     case TASK_PROGRESS:
-                    addch('~');
+                    addstr("running..");
                     break;
                     case TASK_DONE:
-                    addch('#');
+                    addstr("complete");
                     break;
                     default:
                     // addch(' ');
@@ -280,7 +280,9 @@ void DrawBtnOutLineUI(UIobj *obj, eventObj* event)
             // //text描画
             int len = strlen(event[i].text);
             int row = obj->y + bottonHeight[i];
-            int col = textStartWidth;
+            int space = 1;
+            if(event[i].task_status != NONE_TASK_STATUS) space = 9;
+            int col = textStartWidth + space; // statusの文字分
             for(int j=0;j < len; j++){
                 mvaddch(row,col,event[i].text[j]);
                 if( col > (obj->w) ) {  // 2 = '*' + ' '
@@ -303,8 +305,8 @@ void DrawBtnOutLineUI(UIobj *obj, eventObj* event)
             event[i].y = obj->y+ bottonHeight[i];
             //text描画
             int len = strlen(obj->event[i].text);
-            int row = obj->y + bottonHeight[i] + 1;
-            int col = textStartWidth;
+            int row = obj->y + bottonHeight[i]; // 前は+1だった
+            int col = textStartWidth +9; // ステータスの文字分
             for(int j=0;j < len; j++){
                 mvaddch(row,col,obj->event[i].text[j]);
                 if( col > (obj->w)) {  // 2 = '*' + ' '
