@@ -15,7 +15,8 @@ typedef enum {
     END,    //  終了
     MAIN,   //  メイン
     TO_DO,  // todoリスト
-    RECORD  //  記録
+    RECORD,  //  記録
+    MAKE_TASK // task作成
 } NextStateType;
 /* db管理用の数値 */
 typedef enum{
@@ -468,7 +469,7 @@ int InitTextObj(textObj* textObj,int x,int y, int w, int h, AppContent* appObj){
 
 
 
-// 問題点 引数に指定する際使わないものが出てくる．
+// 問題点 引数に指定する際使わないものが出てくる．使ってない
 void dbEvent(DBFuncType num, AppContent appCon){
     int rc;
     switch(num) {
@@ -515,9 +516,10 @@ int MainScreen()
     InitCobj(&c,4,4, 0.0, 0.0);
 
     //構造体の初期化
-    eventObj eventData[3] = {
-        {0, 0, "to do",TO_DO, SELECT_TODO_BYDATE},
+    eventObj eventData[4] = {
+        {0, 0, "task",TO_DO, SELECT_TODO_BYDATE},
         {0, 0, "record", RECORD,DB_EVENT_NONE},
+        {0, 0, "makeTask", MAKE_TASK, DB_EVENT_NONE},
         {0, 0, "end", END, DB_EVENT_NONE}
     };
 
@@ -683,6 +685,49 @@ int TO_DOScreen(){
     }
     return 0;
 
+}
+int makeTaskScreen(void)
+{
+    Cobj c;
+    UIobj makeTaskUI;
+    int w,h;
+    char input;
+
+
+    InitCobj(&c,4,4,0.0,0.0);
+    eventObj eventData[1] = {
+        {0, 0, "back",MAIN, DB_EVENT_NONE},
+    };
+    /*
+    date task 
+    左右のキーでdate, taskへ遷移
+    上下のキーで日付変更
+    enterキーて保存
+    */
+   timeout(16);
+   while(1)
+   {
+    erase();
+    refresh();
+    getmaxyx(stdscr,h,w);
+
+    InitUIobj(&makeTaskUI, 0,0,w,h, sizeof(eventData)/sizeof(eventData[0]),eventData);
+    DrawBtnOutLineUI(&makeTaskUI,eventData);
+    DrawCursor(&c);
+    input = ControlCursor(&c);
+
+    if(input == '\n') 
+    {
+        for(int i = 0; i < sizeof(eventData)/sizeof(eventData[0]); i++ ) {
+            if(eventData[i].x == c.px && eventData[i].y == c.py && eventData[i].nextState!=NONE){
+               return eventData[i].nextState;
+            }
+        }
+    }
+    MoveCursor(&c, &makeTaskUI);
+    usleep(20000);
+   }
+    return 0;
 }
 int diaryScreen(void)
 {
@@ -891,6 +936,9 @@ int main(void)
                 erase();
                 refresh();
                 nextScreen = diaryScreen();
+                break;
+            case MAKE_TASK:
+                nextScreen = makeTaskScreen();
                 break;
             case -1:
                 fprintf(stderr,"error \n");
