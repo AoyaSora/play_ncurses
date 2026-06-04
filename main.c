@@ -33,11 +33,10 @@ typedef enum{
 } DBFuncType;
 /*taskのステータス*/
 typedef enum{
-        TASK_DONE,
-
-    NONE_TASK_STATUS,
-    TASK_PROGRESS,
     TASK_UNTOUCH,
+    TASK_PROGRESS,
+    TASK_DONE,
+    NONE_TASK_STATUS,
     
 } TASK_STATUS;
 /* カーソルの構造体　*/
@@ -75,6 +74,37 @@ typedef struct {
 } eventObj; // nextStateの内容をeventPosに入れる
 
 
+void sort_bucket(eventObj *eventData, int n)
+{
+    int i;
+    int freq[4] = {0};   /* freq[i]=iの出現回数 */
+    int index[4];        /* index[i]=バケットiのデータ登録位置 */
+    eventObj *bucket = (eventObj*)malloc(sizeof(eventObj)*n); /* バケット用配列 */
+
+    /* 出現回数を調べる */
+    for(i = 0; i < n; i++)
+    {
+        freq[eventData[i].task_status]++;
+    }
+    /* 各バケットのデータ挿入位置を初期化 */
+    index[0] = 0;
+    for(i = 1; i <= 3; i++)
+    {
+        index[i] = index[i-1] + freq[i-1];
+    }
+    /* バケットに格納 */
+    for(i = 0; i < n; i++)
+    {
+        bucket[index[eventData[i].task_status]] = eventData[i];
+        index[eventData[i].task_status]++;
+    }
+    /* A配列に再登録 */
+    for(i = 0; i < n; i++)
+    {
+        eventData[i] = bucket[i];
+    }
+    free(bucket);
+}
 /* UIの部品 外枠 */
 typedef struct {
     int x, y; // top left position
@@ -599,8 +629,8 @@ int TO_DOScreen(){
         sqlite3_close(appObj.db);
         return(-1);
     }
+   
     // store tasks to struct
-
     for(int i = 0; i < appObj.todoCount; i++)
     {
         // strcpy(eventData[i].text,todos[i].task);
@@ -613,13 +643,17 @@ int TO_DOScreen(){
         eventData[i].nextState = NONE;
     }
     sqlite3_close(appObj.db); 
-    // bucket sort
+
 
     // store end main and end button.
     strncpy(eventData[appObj.todoCount].text, "back",sizeof(eventData[appObj.todoCount].text) -1);
     eventData[appObj.todoCount].text[sizeof(eventData[appObj.todoCount].text) -1] = '\0';
     eventData[appObj.todoCount].task_status = NONE_TASK_STATUS;
     eventData[appObj.todoCount].nextState = MAIN;
+
+
+     // bucket sort use todos[] todoCount
+    sort_bucket(eventData, appObj.todoCount);
     timeout(17);
     while(1){
         erase();
@@ -687,6 +721,9 @@ int TO_DOScreen(){
                     }
                 }
             // }
+        }else if(input == 'r')
+        {
+            sort_bucket(eventData, appObj.todoCount+1);
         }
         MoveCursor(&c,&todoUI);
         // 動作速度調節
@@ -707,6 +744,7 @@ int makeTaskScreen(void)
     eventObj eventData[1] = {
         {0, 0, "back",MAIN, DB_EVENT_NONE,NONE_TASK_STATUS},
     };
+    eventObj dummy[0];
     /*
     date task 
     左右のキーでdate, taskへ遷移
@@ -720,8 +758,9 @@ int makeTaskScreen(void)
     refresh();
     getmaxyx(stdscr,h,w);
 
-    InitUIobj(&makeTaskUI, 0,0,w,h, sizeof(eventData)/sizeof(eventData[0]),eventData);
-    DrawBtnOutLineUI(&makeTaskUI,eventData);
+    InitUIobj(&makeTaskUI, 0,0,w,h, 0,eventData);
+    DrawBtnOutLineUI(&makeTaskUI,0);
+    DrawBtnUI(eventData, sizeof(eventData)/sizeof(eventData[0]), 1, h-2,w,2);
     DrawCursor(&c);
     input = ControlCursor(&c);
 
