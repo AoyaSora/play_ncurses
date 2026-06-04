@@ -33,10 +33,12 @@ typedef enum{
 } DBFuncType;
 /*taskのステータス*/
 typedef enum{
+        TASK_DONE,
+
     NONE_TASK_STATUS,
-    TASK_UNTOUCH,
     TASK_PROGRESS,
-    TASK_DONE
+    TASK_UNTOUCH,
+    
 } TASK_STATUS;
 /* カーソルの構造体　*/
 typedef struct {
@@ -517,10 +519,10 @@ int MainScreen()
 
     //構造体の初期化
     eventObj eventData[4] = {
-        {0, 0, "task",TO_DO, SELECT_TODO_BYDATE},
-        {0, 0, "record", RECORD,DB_EVENT_NONE},
-        {0, 0, "makeTask", MAKE_TASK, DB_EVENT_NONE},
-        {0, 0, "end", END, DB_EVENT_NONE}
+        {0, 0, "task",TO_DO, SELECT_TODO_BYDATE, NONE_TASK_STATUS},
+        {0, 0, "record", RECORD, DB_EVENT_NONE, NONE_TASK_STATUS},
+        {0, 0, "makeTask", MAKE_TASK, DB_EVENT_NONE, NONE_TASK_STATUS},
+        {0, 0, "end", END, DB_EVENT_NONE, NONE_TASK_STATUS}
     };
 
     timeout(16);    // fps:60くらい
@@ -611,9 +613,12 @@ int TO_DOScreen(){
         eventData[i].nextState = NONE;
     }
     sqlite3_close(appObj.db); 
+    // bucket sort
+
     // store end main and end button.
     strncpy(eventData[appObj.todoCount].text, "back",sizeof(eventData[appObj.todoCount].text) -1);
     eventData[appObj.todoCount].text[sizeof(eventData[appObj.todoCount].text) -1] = '\0';
+    eventData[appObj.todoCount].task_status = NONE_TASK_STATUS;
     eventData[appObj.todoCount].nextState = MAIN;
     timeout(17);
     while(1){
@@ -638,6 +643,7 @@ int TO_DOScreen(){
                             case NONE_TASK_STATUS:
                                 // eventData[i].task_status = TASK_UNTOUCH;
                                 // todos[i].status = TASK_UNTOUCH;
+                                
                                 break;
                             case TASK_UNTOUCH:
                                 eventData[i].task_status = TASK_PROGRESS;
@@ -696,7 +702,7 @@ int makeTaskScreen(void)
 
     InitCobj(&c,4,4,0.0,0.0);
     eventObj eventData[1] = {
-        {0, 0, "back",MAIN, DB_EVENT_NONE},
+        {0, 0, "back",MAIN, DB_EVENT_NONE,NONE_TASK_STATUS},
     };
     /*
     date task 
@@ -757,8 +763,8 @@ int diaryScreen(void)
         // {0, 0, "none", NONE, DB_EVENT_NONE}
     };
     eventObj btnEvents[2] = { 
-        {0,0,"update",NONE, UPDATE_DIARY_BYDATE},
-        {0,0,"back", MAIN, DB_EVENT_NONE}
+        {0,0,"update",NONE, UPDATE_DIARY_BYDATE, NONE_TASK_STATUS},
+        {0,0,"back", MAIN, DB_EVENT_NONE,NONE_TASK_STATUS}
     };
     refresh();
 
@@ -926,6 +932,7 @@ int main(void)
     int nextScreen = MainScreen();
     while(i){
         switch(nextScreen){
+
             case MAIN:
                 nextScreen = MainScreen();
                 break;
