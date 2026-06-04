@@ -663,22 +663,25 @@ int TO_DOScreen(){
                         // backbutton
                         if(eventData[i].nextState == MAIN) 
                         {
-                            // save status
-                            // update todo
-                            rc =sqlite3_open("testDB.db", &appObj.db);
-                            if(rc)
+                            if(appObj.todoCount!= 0)
                             {
-                                fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj.db));
+                                // save status
+                                // update todo
+                                rc =sqlite3_open("testDB.db", &appObj.db);
+                                if(rc)
+                                {
+                                    fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj.db));
+                                    sqlite3_close(appObj.db);
+                                    return(-1);
+                                }
+                                rc = updateToDoStatus(appObj.db, todos,appObj.todoCount);
+                                if(rc != SQLITE_DONE)
+                                {
+                                    sqlite3_close(appObj.db);
+                                    return (-1);
+                                }
                                 sqlite3_close(appObj.db);
-                                return(-1);
                             }
-                            rc = updateToDoStatus(appObj.db, todos,appObj.todoCount);
-                            if(rc != SQLITE_DONE)
-                            {
-                                sqlite3_close(appObj.db);
-                                return (-1);
-                            }
-                            sqlite3_close(appObj.db);
                             return eventData[i].nextState;
                         }
                     }
