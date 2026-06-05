@@ -1,9 +1,17 @@
 # play_ncurses
-### added feature
-- move '>' charactor by KEY
-- made frame of UI function
-- event when '>' reaches '*' and press space key
-- made sqlite function
+### about
+this main app contains task control and diary function. 
+### Screen
+- mainScreen
+    - can go to "task", "makeTask", "diary" screen
+- taskScreen
+    - can change status of task(untouch->running->complete).
+- makeTaskScreen 
+    - can set information of task(date,content).
+- diaryScreen
+    - can record today's diary.
 
-### next task
-- use sqlite in main.c
+### How to use 
+- move '>' charactor as a cursor by arrow KEY
+- push Enter key to select
+- in task Screen, sort task by pushing 'r' 

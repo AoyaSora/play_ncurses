@@ -734,10 +734,19 @@ int TO_DOScreen(){
 }
 int makeTaskScreen(void)
 {
+    typedef enum{
+        ORIGINAL,
+        DATE,
+        TASK,
+        EDIT
+    } uiType;
+
     Cobj c;
     UIobj makeTaskUI;
     int w,h;
     char input;
+    int uiStatus = ORIGINAL;
+
 
 
     InitCobj(&c,4,4,0.0,0.0);
@@ -757,17 +766,24 @@ int makeTaskScreen(void)
     erase();
     refresh();
     getmaxyx(stdscr,h,w);
-
     InitUIobj(&makeTaskUI, 0,0,w,h, 0,eventData);
     DrawBtnOutLineUI(&makeTaskUI,0);
     DrawBtnUI(eventData, sizeof(eventData)/sizeof(eventData[0]), 1, h-2,w,2);
     DrawCursor(&c);
-    input = ControlCursor(&c);
-
+    input = ControlCursor(&c); //pv pyがcobjに加えられる + 入力keyを返す
     if(input == '\n') 
     {
         for(int i = 0; i < sizeof(eventData)/sizeof(eventData[0]); i++ ) {
-            if(eventData[i].x == c.px && eventData[i].y == c.py && eventData[i].nextState!=NONE){
+            if(eventData[i].x == c.px && eventData[i].y == c.py){
+                switch (eventData->nextState)
+                {
+                case constant expression:
+                    /* code */
+                    break;
+                
+                default:
+                    break;
+                }
                return eventData[i].nextState;
             }
         }
@@ -777,6 +793,28 @@ int makeTaskScreen(void)
    }
     return 0;
 }
+// 指定された位置への移動 
+int restrictedMoveCursor(Cobj* c, UIobj* ui, eventObj* event[], int btnNum) // 引数: cobj, 全体UIの大きさ，ボタンPos
+{
+    int i = c->px;
+    if(c->px != 0){
+        while( ui->x < i && i < ui->x+ui->w )// uiの中なら
+        {
+            i += c->vx;
+            for(int j = 0; j < btnNum; j++)
+            {
+                if(i == event[j]->x)
+                {
+                    c->vx = i; // 移動分追加
+                    moveCursor(&c, ui);
+                }
+            }
+            
+        }
+    }
+    
+}
+
 int diaryScreen(void)
 {
     Cobj c;
