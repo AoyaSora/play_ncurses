@@ -580,7 +580,7 @@ int MainScreen()
     char input;
 
     //初期設定
-    InitCobj(&c,4,4, 0.0, 0.0);
+    InitCobj(&c,1,1, 0.0, 0.0);
 
     //構造体の初期化
     eventObj eventData[4] = {
@@ -595,7 +595,6 @@ int MainScreen()
         erase();
         refresh();
         getmaxyx(stdscr, h, w);
-
         InitUIobj(&menu,0,0,w,h, sizeof(eventData)/sizeof(eventData[0]),eventData);
         DrawBtnOutLineUI(&menu,eventData);
         DrawCursor(&c);
@@ -775,7 +774,7 @@ int smallTaskDate(UIobj* ui, Date *dateObj, Cobj *c)
     time_t timer;
     struct tm *local_time;
     int year, month, day;
-    char date[128];
+    char date[64];
     int input;
     // 1. 現在時刻（協定世界時からの経過秒数）を取得
     time(&timer);
@@ -801,6 +800,9 @@ int smallTaskDate(UIobj* ui, Date *dateObj, Cobj *c)
         }else if(input == '\e')
         {
             // escでreturn
+            dateObj->year = year;
+            dateObj->month = month;
+            dateObj->day = day;
             return 0;
         }
 
@@ -808,7 +810,7 @@ int smallTaskDate(UIobj* ui, Date *dateObj, Cobj *c)
         if (dayCount == -1)
         {
             /* everyday task をdbに保存 */
-            strncpy(date,"everyday",sizeof(date)-1);
+            strncpy(date," everyday ",sizeof(date)-1);
             date[sizeof(date)-1] = '\0';
         }else
         {
@@ -816,19 +818,19 @@ int smallTaskDate(UIobj* ui, Date *dateObj, Cobj *c)
             local_time->tm_mday =  dateObj->day + dayCount;
             local_time->tm_mon = dateObj->month-1;
             local_time->tm_year = dateObj->year;
-            mvprintw(10,10,"dayCount:%d",dayCount);
+            // mvprintw(10,10,"dayCount:%d",dayCount);
 
             // 3. 各要素を数値として抽出
             mktime(local_time);
-            mvprintw(11,10,"local_time:%d",local_time);
+            // mvprintw(11,10,"local_time:%d",local_time);
 
-            year = local_time->tm_year + 1900; // tm_yearは1900年からの経過年数
+            year = local_time->tm_year; // tm_yearは1900年からの経過年数
             month = local_time->tm_mon + 1;    // tm_monは0～11で取得される
             day = local_time->tm_mday;         // tm_mdayはそのまま日を表す
             sprintf(date, "%04d/%02d/%02d",year,month,day);
         }
         // 描画
-        mvaddstr( ui->x+2,ui->y+2 ,date);
+        mvaddstr( ui->y+2,ui->x+4 ,date);
         usleep(50000);
     }
        
@@ -841,6 +843,8 @@ int makeTaskScreen(void)
     int w,h;
     char input;
     int uiStatus = MAKE_TASK;
+        char timeBuf[64];
+
 
     // 全体の外枠は描画，ボタンの場所は割合で作成．drawBtnUIいらない
     // time
@@ -860,9 +864,7 @@ int makeTaskScreen(void)
     date.day = local_time->tm_mday;         // tm_mdayはそのまま日を表す
 
 
-
-
-    InitCobj(&c,4,4,0.0,0.0);
+    InitCobj(&c,1,1,0.0,0.0);
     eventObj eventData[4] = {
         {1, 0, "date", TASK_DATE, DB_EVENT_NONE,NONE_TASK_STATUS},
         {1, h*1/4, "task", TASK_CONTENT, DB_EVENT_NONE,NONE_TASK_STATUS},
@@ -882,24 +884,29 @@ int makeTaskScreen(void)
     erase();
     refresh();
     getmaxyx(stdscr,h,w);
-    InitUIobj(&makeTaskUI, 0,0,w,h, 0,eventData);
-    DrawBtnOutLineUI(&makeTaskUI,0); // outlineを描画
-    DrawBtnUI(eventData, sizeof(eventData)/sizeof(eventData[0]), 1, h-2,w,2);
+    InitUIobj(&makeTaskUI, 0,0,w,h, 4,eventData);
+    sprintf(timeBuf,"%04d/%02d/%02d",date.year,date.month,date.day);
+    mvaddstr(makeTaskUI.y+2,makeTaskUI.x+4,timeBuf);
+    DrawBtnOutLineUI(&makeTaskUI,eventData); // outlineを描画
+    // DrawBtnUI(eventData, sizeof(eventData)/sizeof(eventData[0]), 1, h-2,w,2);
     DrawCursor(&c);
     input = ControlCursor(&c); //pv pyがcobjに加えられる + 入力keyを返す
     if(input == '\n') 
     {
         for(int i = 0; i < sizeof(eventData)/sizeof(eventData[0]); i++ ) {
             if(eventData[i].x == c.px && eventData[i].y == c.py){
-                switch (eventData->nextState)
+                switch (eventData[i].nextState)
                 {
-                case TASK_DATE:// ここでtaskDateSmallなどのscreenへ行く
-                    /* code */
-                    smallTaskDate(&makeTaskUI,&date,&c);
-                    break;
-                
-                default:
-                    break;
+                    case MAIN:
+                        return MAIN;
+                        break;
+                    case TASK_DATE:// ここでtaskDateSmallなどのscreenへ行く
+                        /* code */
+                        smallTaskDate(&makeTaskUI,&date,&c);
+                        break;
+        
+                    default:
+                        break;
                 }
             //    return eventData[i].nextState;
             }
