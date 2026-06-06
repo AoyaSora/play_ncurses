@@ -129,6 +129,31 @@ typedef struct{
     char content[MAX_CONTEXT];
 } textObj;
 
+/* 閏年計算 */
+int isLeapYear(int year){
+    if((year%4 == 0) && (year%100 != 0) || (year%400 == 0)){
+        return 1; // 閏年
+    }
+    return 0; //平年
+};
+/* 日付け計算 */
+int calculateDate(Date *date,int dayCount){
+    // 各月の日数(1月-12月)
+    int daysInMonth[] = {31, 28, 31, 30, 31, 31, 30, 31, 30, 31};
+    // 日付を計算 
+    // 日数
+    // 通常 date.day + dayCount <= daysInMonth[date.month -1];
+    // over date.day + dayCount > daysInMonth[date.month -1];
+    // date.day = date.day + dayCount - daysInMonth[date.month -1];
+    // date.month ++;
+    // 月
+    // default date.month <= 12;
+    // over date.month > 12;
+    // date.month -= 12;
+    // year ++;
+    return 0;
+}
+
 /* カーソルの初期化 */
 void InitCobj(Cobj *obj, double px,double py,double vx,double vy)
 {
@@ -765,6 +790,7 @@ int smallTaskDate(UIobj* ui, Date *dateObj, Cobj *c)
         {
             // 日付カウントインクリメント
             dayCount ++;
+            
         }else if (input == KEY_DOWN)
         {
             /* 日付カウントデクリメント */
@@ -787,9 +813,13 @@ int smallTaskDate(UIobj* ui, Date *dateObj, Cobj *c)
         }else
         {
             /* change date by today's date */
-            local_time->tm_mday += dayCount;
+            local_time->tm_mday =  dateObj->day + dayCount;
+            mvprintw(10,10,"dayCount:%d",dayCount);
+
             // 3. 各要素を数値として抽出
             mktime(local_time);
+            mvprintw(11,10,"local_time:%d",local_time);
+
             year = local_time->tm_year + 1900; // tm_yearは1900年からの経過年数
             month = local_time->tm_mon + 1;    // tm_monは0～11で取得される
             day = local_time->tm_mday;         // tm_mdayはそのまま日を表す
@@ -797,8 +827,7 @@ int smallTaskDate(UIobj* ui, Date *dateObj, Cobj *c)
         }
         // 描画
         mvaddstr( ui->x+2,ui->y+2 ,date);
-        c->vx=0;c->vy=0;
-        usleep(20000);
+        usleep(50000);
     }
        
 }
@@ -870,7 +899,7 @@ int makeTaskScreen(void)
                 default:
                     break;
                 }
-               return eventData[i].nextState;
+            //    return eventData[i].nextState;
             }
         }
     }
