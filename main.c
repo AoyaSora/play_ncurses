@@ -814,6 +814,8 @@ int smallTaskDate(UIobj* ui, Date *dateObj, Cobj *c)
         {
             /* change date by today's date */
             local_time->tm_mday =  dateObj->day + dayCount;
+            local_time->tm_mon = dateObj->month-1;
+            local_time->tm_year = dateObj->year;
             mvprintw(10,10,"dayCount:%d",dayCount);
 
             // 3. 各要素を数値として抽出
