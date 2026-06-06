@@ -769,6 +769,7 @@ int TO_DOScreen(){
 // 範囲内，makeTaskのdate情報を更新，描画.カーソルを受け取る
 int smallTaskDate(UIobj* ui, Date *dateObj, Cobj *c)
 {
+    mvaddch(ui->event[0].y,ui->event[0].x, '*');
     int dayCount = 0;
     // 今日のyear, month, dateを数値で取得
     time_t timer;
@@ -803,6 +804,8 @@ int smallTaskDate(UIobj* ui, Date *dateObj, Cobj *c)
             dateObj->year = year;
             dateObj->month = month;
             dateObj->day = day;
+            c->px = ui->event[0].x;
+            c->py = ui->event[0].y;
             return 0;
         }
 
@@ -830,8 +833,11 @@ int smallTaskDate(UIobj* ui, Date *dateObj, Cobj *c)
             sprintf(date, "%04d/%02d/%02d",year,month,day);
         }
         // 描画
+        c->px = ui->x+3;
+        c->py = ui->y+2;
+        DrawCursor(c);
         mvaddstr( ui->y+2,ui->x+4 ,date);
-        usleep(50000);
+        usleep(20000);
     }
        
 }
