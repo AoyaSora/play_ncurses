@@ -16,7 +16,12 @@ typedef enum {
     MAIN,   //  メイン
     TO_DO,  // todoリスト
     RECORD,  //  記録
-    MAKE_TASK // task作成
+    MAKE_TASK, // task作成screen
+    /*-これはMakeTaskScreen内の画面--*/
+    TASK_DATE, // task -> date
+    TASK_CONTENT, // task-> task
+    TASK_MAKE // 
+    /*----------------------------*/
 } NextStateType;
 /* db管理用の数値 */
 typedef enum{
@@ -44,7 +49,11 @@ typedef struct {
     int px, py; //Position(位置)
     double vx, vy; //Velocity(速度) 
 } Cobj;            // cursor object(カーソルの場所)
-
+typedef struct {
+    int year;
+    int month;
+    int day;
+} Date;
 /* イベント判定2D配列 */
 // char eventPos[200][280]; // 全体でのイベントの場所管理  ボタンの検知用 '*'
 /*
@@ -149,8 +158,9 @@ int ControlCursor(Cobj *obj)
         case KEY_LEFT : obj->vx = -1.0; break;
         case KEY_RIGHT : obj->vx = 1.0; break;
         case 127 : return KEY_BACKSPACE;
+        // case '\e' : return 
         // case ' ' : return ('s'); break;
-        case 'q': case 'Q': case'\e': return ('q'); break;
+        // case 'q': case 'Q':  return ('q'); break;
         default : break;
 
     }
@@ -732,26 +742,101 @@ int TO_DOScreen(){
     return 0;
 
 }
+// 範囲内，makeTaskのdate情報を更新，描画.カーソルを受け取る
+int smallTaskDate(UIobj* ui, Date *dateObj, Cobj *c)
+{
+    int dayCount = 0;
+    // 今日のyear, month, dateを数値で取得
+    time_t timer;
+    struct tm *local_time;
+    int year, month, day;
+    char date[128];
+    int input;
+    // 1. 現在時刻（協定世界時からの経過秒数）を取得
+    time(&timer);
+
+    // 2. ローカル時刻（現地時間）の構造体に変換
+    local_time = localtime(&timer);
+    while(1)
+    {
+         // key操作
+        input = ControlCursor(c);
+        if(input == KEY_UP)
+        {
+            // 日付カウントインクリメント
+            dayCount ++;
+        }else if (input == KEY_DOWN)
+        {
+            /* 日付カウントデクリメント */
+            if(dayCount >= 0)
+            {
+                dayCount--;
+            }
+        }else if(input == '\e')
+        {
+            // escでreturn
+            return 0;
+        }
+
+        // change "date"
+        if (dayCount == -1)
+        {
+            /* everyday task をdbに保存 */
+            strncpy(date,"everyday",sizeof(date)-1);
+            date[sizeof(date)-1] = '\0';
+        }else
+        {
+            /* change date by today's date */
+            local_time->tm_mday += dayCount;
+            // 3. 各要素を数値として抽出
+            mktime(local_time);
+            year = local_time->tm_year + 1900; // tm_yearは1900年からの経過年数
+            month = local_time->tm_mon + 1;    // tm_monは0～11で取得される
+            day = local_time->tm_mday;         // tm_mdayはそのまま日を表す
+            sprintf(date, "%04d/%02d/%02d",year,month,day);
+        }
+        // 描画
+        mvaddstr( ui->x+2,ui->y+2 ,date);
+        c->vx=0;c->vy=0;
+        usleep(20000);
+    }
+       
+}
+
 int makeTaskScreen(void)
 {
-    typedef enum{
-        ORIGINAL,
-        DATE,
-        TASK,
-        EDIT
-    } uiType;
-
     Cobj c;
     UIobj makeTaskUI;
     int w,h;
     char input;
-    int uiStatus = ORIGINAL;
+    int uiStatus = MAKE_TASK;
+
+    // 全体の外枠は描画，ボタンの場所は割合で作成．drawBtnUIいらない
+    // time
+    time_t timer;
+    struct tm *local_time;
+    // int year, month, day;
+
+    Date date;
+    // 1. 現在時刻（協定世界時からの経過秒数）を取得
+    time(&timer);
+
+    // 2. ローカル時刻（現地時間）の構造体に変換
+    local_time = localtime(&timer);
+    // 3. 各要素を数値として抽出
+    date.year = local_time->tm_year + 1900; // tm_yearは1900年からの経過年数
+    date.month = local_time->tm_mon + 1;    // tm_monは0～11で取得される
+    date.day = local_time->tm_mday;         // tm_mdayはそのまま日を表す
+
 
 
 
     InitCobj(&c,4,4,0.0,0.0);
-    eventObj eventData[1] = {
-        {0, 0, "back",MAIN, DB_EVENT_NONE,NONE_TASK_STATUS},
+    eventObj eventData[4] = {
+        {1, 0, "date", TASK_DATE, DB_EVENT_NONE,NONE_TASK_STATUS},
+        {1, h*1/4, "task", TASK_CONTENT, DB_EVENT_NONE,NONE_TASK_STATUS},
+        {1, h/2, "due", TASK_MAKE, DB_EVENT_NONE,NONE_TASK_STATUS },
+        {0, h*3/4, "back",MAIN, DB_EVENT_NONE,NONE_TASK_STATUS},
     };
     eventObj dummy[0];
     /*
@@ -767,7 +852,7 @@ int makeTaskScreen(void)
     refresh();
     getmaxyx(stdscr,h,w);
     InitUIobj(&makeTaskUI, 0,0,w,h, 0,eventData);
-    DrawBtnOutLineUI(&makeTaskUI,0);
+    DrawBtnOutLineUI(&makeTaskUI,0); // outlineを描画
     DrawBtnUI(eventData, sizeof(eventData)/sizeof(eventData[0]), 1, h-2,w,2);
     DrawCursor(&c);
     input = ControlCursor(&c); //pv pyがcobjに加えられる + 入力keyを返す
@@ -777,8 +862,9 @@ int makeTaskScreen(void)
             if(eventData[i].x == c.px && eventData[i].y == c.py){
                 switch (eventData->nextState)
                 {
-                case constant expression:
+                case TASK_DATE:// ここでtaskDateSmallなどのscreenへ行く
                     /* code */
+                    smallTaskDate(&makeTaskUI,&date,&c);
                     break;
                 
                 default:
@@ -806,13 +892,13 @@ int restrictedMoveCursor(Cobj* c, UIobj* ui, eventObj* event[], int btnNum) // �
                 if(i == event[j]->x)
                 {
                     c->vx = i; // 移動分追加
-                    moveCursor(&c, ui);
+                    MoveCursor(c, ui);
                 }
             }
             
         }
     }
-    
+    return 0;
 }
 
 int diaryScreen(void)
