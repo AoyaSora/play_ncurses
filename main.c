@@ -472,7 +472,7 @@ void UpdateText(Cobj* Cobj, textObj* textObj, int input){
             break;
         }
         default :{
-            // 文字追加の処理ここでabortが起きる
+            // 文字追加の処理ここでabortが起きた
             for(int i =MAX_CONTEXT-1; i > textObj->cursorIndex; i-- ){
                 textObj->content[i] = textObj->content[i-1];
             }
@@ -841,6 +841,47 @@ int smallTaskDate(UIobj* ui, Date *dateObj, Cobj *c)
     }
        
 }
+int smallTaskContent(UIobj*ui, char* task, Cobj* c)
+{
+    /* 
+    this small task do go to test field and make task text.
+    It have to use diary funtion for change text.
+    when you push enter key, back to makeTaskScreen.
+    */
+    textObj textField; // the size of field, cursorIndex, content array
+    UIobj textUI;// have to set position by event[1].y,x
+    InitUIobj(&textUI, ui->event[1].x+3, ui->event[1].y+1, ui->w/4, ui->y/4, 0,0);
+    int input; 
+    mvaddch(ui->event[1].y,ui->event[1].x, '*'); // change '>' position to '*' for view
+    c->px = textField.x; c->py = textField.y; // initialize cursor position
+    textField.x =  ui->event[1].x; textField.y = ui->event[1].y; textField.w = textUI.w; textField.h = 4;
+    // strcpy(textField.content, "sample text");
+    strncpy(textField.content, "sample text", sizeof(textField.content) - 1);
+    textField.content[sizeof(textField.content) - 1] = '\0';
+    // printf("content:%s\n", textField.content);
+
+    // textField.cursorIndex = (ui->x - textField.x) + (ui->y - textField.y) * (textField.w);
+    while(1)
+    {
+        input = ControlCursor(c);
+        if(input == '\n')
+        {
+            // save the text to task.
+            // back to the cursor position to eventPos
+            c->px = ui->event[1].x; c->py = ui->event[1].y;
+            return 0;
+        }else // wanna use updateText function
+        {
+            UpdateText(c, &textField, input);
+        }
+        MoveCursor(c, &textUI);
+        DrawText(c, &textField);
+        DrawTextCursor(c);
+        refresh();
+        usleep(20000);
+    }
+    return 0;
+}
 
 int makeTaskScreen(void)
 {
@@ -850,7 +891,7 @@ int makeTaskScreen(void)
     char input;
     int uiStatus = MAKE_TASK;
         char timeBuf[64];
-
+    char task[128];
 
     // 全体の外枠は描画，ボタンの場所は割合で作成．drawBtnUIいらない
     // time
@@ -910,7 +951,10 @@ int makeTaskScreen(void)
                         /* code */
                         smallTaskDate(&makeTaskUI,&date,&c);
                         break;
-        
+                    case TASK_CONTENT:
+                        smallTaskContent(&makeTaskUI, task, &c);
+                    case TASK_MAKE:
+                        break;
                     default:
                         break;
                 }
@@ -1114,10 +1158,10 @@ int diaryScreen(void)
         if(input != '\n') UpdateText(&c,&tObj,input);
 
         //描画
-        DrawBtnOutLineUI( &diaryUI, eventData);
+        DrawBtnOutLineUI( &diaryUI, eventData); // outlineだけ
         DrawText(&c, &tObj);
-        DrawBtnUI(btnEvents, 2, diaryUI.x+1,diaryUI.y+diaryUI.h-3, diaryUI.w, 3);
-        DrawTextCursor(&c);
+        DrawBtnUI(btnEvents, 2, diaryUI.x+1,diaryUI.y+diaryUI.h-3, diaryUI.w, 3); // 下に表示させているボタンが消える
+        DrawTextCursor(&c); // '|'カーソル描画
         
 
         refresh();
