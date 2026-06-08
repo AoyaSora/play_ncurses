@@ -934,6 +934,7 @@ int makeTaskScreen(void)
     上下のキーで日付変更
     enterキーて保存
     */
+//    int count=0;
    timeout(16);
    while(1)
    {
@@ -947,6 +948,8 @@ int makeTaskScreen(void)
     DrawBtnOutLineUI(&makeTaskUI,eventData); // outlineを描画
     // DrawBtnUI(eventData, sizeof(eventData)/sizeof(eventData[0]), 1, h-2,w,2);
     DrawCursor(&c);
+                            // mvprintw(makeTaskUI.y+makeTaskUI.h-3,4,"count:%d",count);
+
     input = ControlCursor(&c); //pv pyがcobjに加えられる + 入力keyを返す
     if(input == '\n') 
     {
@@ -964,7 +967,6 @@ int makeTaskScreen(void)
                     case TASK_CONTENT:
                         smallTaskContent(&makeTaskUI, todo.task, &c);
                     case TASK_MAKE:
-                        // 同じのがなかったら
                         // todo tableへinsert文を実行する．
                         rc = sqlite3_open("testDB.db", &db);
                         if(rc){
@@ -978,8 +980,10 @@ int makeTaskScreen(void)
                             sqlite3_close(db);
                             return(-1);
                         }
-                         // 4.クローズ
+                        // 4.クローズ
                         sqlite3_close(db); 
+                        // count++;
+                        // mvprintw(makeTaskUI.y+makeTaskUI.h-2,4,"count:%d",count);
                         break;
                     default:
                         break;
