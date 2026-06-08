@@ -798,7 +798,7 @@ int smallTaskDate(UIobj* ui, Date *dateObj, Cobj *c)
             {
                 dayCount--;
             }
-        }else if(input == '\e')
+        }else if(input == '\e' || input == '\n')
         {
             // escでreturn
             dateObj->year = year;
@@ -850,13 +850,13 @@ int smallTaskContent(UIobj*ui, char* task, Cobj* c)
     */
     textObj textField; // the size of field, cursorIndex, content array
     UIobj textUI;// have to set position by event[1].y,x
-    InitUIobj(&textUI, ui->event[1].x+3, ui->event[1].y+1, ui->w/4, ui->y/4, 0,0);
+    InitUIobj(&textUI, ui->event[1].x+3, ui->event[1].y+1, ui->w, 3, 0,0);
     int input; 
     mvaddch(ui->event[1].y,ui->event[1].x, '*'); // change '>' position to '*' for view
-    c->px = textField.x; c->py = textField.y; // initialize cursor position
-    textField.x =  ui->event[1].x; textField.y = ui->event[1].y; textField.w = textUI.w; textField.h = 4;
+    c->px = textUI.x; c->py = textUI.y; // initialize cursor position
+    textField.x =  textUI.x; textField.y = textUI.y; textField.w = textUI.w-5; textField.h = 4;
     // strcpy(textField.content, "sample text");
-    strncpy(textField.content, "sample text", sizeof(textField.content) - 1);
+    strncpy(textField.content, task, sizeof(textField.content) - 1);
     textField.content[sizeof(textField.content) - 1] = '\0';
     // printf("content:%s\n", textField.content);
 
@@ -869,6 +869,10 @@ int smallTaskContent(UIobj*ui, char* task, Cobj* c)
             // save the text to task.
             // back to the cursor position to eventPos
             c->px = ui->event[1].x; c->py = ui->event[1].y;
+            // update task <- textField.contnt
+            strncpy(task,textField.content,63 );
+            task[63] = '\0';
+
             return 0;
         }else // wanna use updateText function
         {
@@ -887,12 +891,17 @@ int makeTaskScreen(void)
 {
     Cobj c;
     UIobj makeTaskUI;
+    UIobj textUI; // こっちで定義してsmallへ引き渡す 
     int w,h;
     char input;
     int uiStatus = MAKE_TASK;
-        char timeBuf[64];
-    char task[128];
-
+        // char timeBuf[64];
+    // char task[128];
+    int rc;
+    // AppContent appObj;
+    sqlite3* db;
+    ToDoObj todo;// date, task, task id
+    todo.status = TASK_UNTOUCH;
     // 全体の外枠は描画，ボタンの場所は割合で作成．drawBtnUIいらない
     // time
     time_t timer;
@@ -932,8 +941,9 @@ int makeTaskScreen(void)
     refresh();
     getmaxyx(stdscr,h,w);
     InitUIobj(&makeTaskUI, 0,0,w,h, 4,eventData);
-    sprintf(timeBuf,"%04d/%02d/%02d",date.year,date.month,date.day);
-    mvaddstr(makeTaskUI.y+2,makeTaskUI.x+4,timeBuf);
+    sprintf(todo.date,"%04d/%02d/%02d",date.year,date.month,date.day);
+    mvaddstr(makeTaskUI.y+2,makeTaskUI.x+4,todo.date);
+    mvaddstr( makeTaskUI.event[1].y+1, makeTaskUI.event[1].x+3, todo.task);
     DrawBtnOutLineUI(&makeTaskUI,eventData); // outlineを描画
     // DrawBtnUI(eventData, sizeof(eventData)/sizeof(eventData[0]), 1, h-2,w,2);
     DrawCursor(&c);
@@ -952,8 +962,24 @@ int makeTaskScreen(void)
                         smallTaskDate(&makeTaskUI,&date,&c);
                         break;
                     case TASK_CONTENT:
-                        smallTaskContent(&makeTaskUI, task, &c);
+                        smallTaskContent(&makeTaskUI, todo.task, &c);
                     case TASK_MAKE:
+                        // 同じのがなかったら
+                        // todo tableへinsert文を実行する．
+                        rc = sqlite3_open("testDB.db", &db);
+                        if(rc){
+                            fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(db));
+                            sqlite3_close(db);
+                            return(-1);
+                        }
+                        rc = insertToDoTable(db,&todo);
+                        if(rc != SQLITE_DONE){
+                            fprintf(stderr, "can't todotbale: %s\n", sqlite3_errmsg(db));
+                            sqlite3_close(db);
+                            return(-1);
+                        }
+                         // 4.クローズ
+                        sqlite3_close(db); 
                         break;
                     default:
                         break;
