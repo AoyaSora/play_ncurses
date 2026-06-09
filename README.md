@@ -1,6 +1,6 @@
 # play_ncurses
 ### about
-this main app contains task control and diary function. 
+this main app contains task control and diary function. please install main file and execute.
 ### Screen
 - mainScreen
     - can go to "task", "makeTask", "diary" screen
