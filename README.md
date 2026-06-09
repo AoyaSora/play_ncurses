@@ -1,6 +1,6 @@
 # play_ncurses
 ### about
-this main app contains task control and diary function. please install main file and execute.
+this main app contains task control and diary function. 
 ### Screen
 - mainScreen
     - can go to "task", "makeTask", "diary" screen
@@ -11,7 +11,12 @@ this main app contains task control and diary function. please install main file
 - diaryScreen
     - can record today's diary.
 
-### How to use 
+### How to control
 - move '>' charactor as a cursor by arrow KEY
 - push Enter key to select
 - in task Screen, sort task by pushing 'r' 
+
+### How to use
+- copy this directory
+- $ make 
+- $ ./main
