@@ -1,8 +1,17 @@
 # play_ncurses
-### added feature
-- move '>' charactor by KEY
-- made frame of UI function 
+### about
+this main app contains task control and diary function. 
+### Screen
+- mainScreen
+    - can go to "task", "makeTask", "diary" screen
+- taskScreen
+    - can change status of task(untouch->running->complete).
+- makeTaskScreen 
+    - can set information of task(date,content).
+- diaryScreen
+    - can record today's diary.
 
-### next feature
-- UIフレームへの当たり判定
-- '>'を特定の場所に移動させエンターを押したら変化させる入力機能
+### How to use 
+- move '>' charactor as a cursor by arrow KEY
+- push Enter key to select
+- in task Screen, sort task by pushing 'r' 
