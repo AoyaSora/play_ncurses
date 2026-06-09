@@ -8,7 +8,7 @@
 #include "sqliteFunc.h"
 // textObjの文字数制限
 #define MAX_CONTEXT 1024
-
+#define DBFILE "diaryTodo.db"
 /* 画面の種類　*/
 typedef enum {
     NONE,   // 遷移なし
@@ -503,7 +503,7 @@ int InitTextObj(textObj* textObj,int x,int y, int w, int h, AppContent* appObj){
     // 1.DiaryObjを作成．その日付にstrftimeで作成した文字列を入れる
     strcpy(appObj->diary->date, timeBuf);
     // 2.dbをopenする
-    rc = sqlite3_open("testDB.db", &appObj->db);
+    rc = sqlite3_open(DBFILE, &appObj->db);
     if(rc){
         fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj->db));
         sqlite3_close(appObj->db);
@@ -647,7 +647,7 @@ int TO_DOScreen(){
     InitCobj(&c,4,4, 0.0, 0.0);
 
     // open DB
-    rc = sqlite3_open("testDB.db", &appObj.db);
+    rc = sqlite3_open(DBFILE, &appObj.db);
      if(rc){
         fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj.db));
         sqlite3_close(appObj.db);
@@ -735,7 +735,7 @@ int TO_DOScreen(){
                             {
                                 // save status
                                 // update todo
-                                rc =sqlite3_open("testDB.db", &appObj.db);
+                                rc =sqlite3_open(DBFILE, &appObj.db);
                                 if(rc)
                                 {
                                     fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj.db));
@@ -873,7 +873,7 @@ int smallTaskContent(UIobj*ui, char* task, Cobj* c)
             strncpy(task,textField.content,63 );
             task[63] = '\0';
 
-            return 0;
+            return MAKE_TASK;
         }else // wanna use updateText function
         {
             UpdateText(c, &textField, input);
@@ -884,7 +884,7 @@ int smallTaskContent(UIobj*ui, char* task, Cobj* c)
         refresh();
         usleep(20000);
     }
-    return 0;
+    return MAIN;
 }
 
 int makeTaskScreen(void)
@@ -934,7 +934,7 @@ int makeTaskScreen(void)
     上下のキーで日付変更
     enterキーて保存
     */
-//    int count=0;
+   int count=0;
    timeout(16);
    while(1)
    {
@@ -948,7 +948,7 @@ int makeTaskScreen(void)
     DrawBtnOutLineUI(&makeTaskUI,eventData); // outlineを描画
     // DrawBtnUI(eventData, sizeof(eventData)/sizeof(eventData[0]), 1, h-2,w,2);
     DrawCursor(&c);
-                            // mvprintw(makeTaskUI.y+makeTaskUI.h-3,4,"count:%d",count);
+    mvprintw(makeTaskUI.y+makeTaskUI.h-3,4,"count:%d",count);
 
     input = ControlCursor(&c); //pv pyがcobjに加えられる + 入力keyを返す
     if(input == '\n') 
@@ -966,9 +966,10 @@ int makeTaskScreen(void)
                         break;
                     case TASK_CONTENT:
                         smallTaskContent(&makeTaskUI, todo.task, &c);
+                        break;
                     case TASK_MAKE:
                         // todo tableへinsert文を実行する．
-                        rc = sqlite3_open("testDB.db", &db);
+                        rc = sqlite3_open(DBFILE, &db);
                         if(rc){
                             fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(db));
                             sqlite3_close(db);
@@ -982,7 +983,7 @@ int makeTaskScreen(void)
                         }
                         // 4.クローズ
                         sqlite3_close(db); 
-                        // count++;
+                        count++;
                         // mvprintw(makeTaskUI.y+makeTaskUI.h-2,4,"count:%d",count);
                         break;
                     default:
@@ -1060,8 +1061,8 @@ int diaryScreen(void)
     // printf("content:%s\n", dObj.content);
         // strcpy(text,dObj.content);
     // textObj Initialization
-    
-    InitUIobj(&diaryUI,0,0,20,20,0,eventData);
+    getmaxyx(stdscr, h, w);
+    InitUIobj(&diaryUI,0,0,w,h,0,eventData);
     rc = InitTextObj(&tObj,diaryUI.x+1,diaryUI.y+1,diaryUI.w-2,diaryUI.h-2,&appObj); // この関数内でdb開いてtext取得して，closeまでやる
     // contentSize = sizeof(dObj.content)/sizeof(dObj.content[0]);
     // mvprintw(19,21,"diary contentSize:%d",contentSize);
@@ -1075,6 +1076,8 @@ int diaryScreen(void)
         getmaxyx(stdscr, h, w);
         // input = 0;
         input = ControlCursor(&c);
+            // InitUIobj(&diaryUI,0,0,w,h,0,eventData);
+
         if(input != -1) mvprintw(21,21,"diaryScreen KEY:%02d",input);
         // 時間取得
                 t = time(NULL);// 基準時刻取得
@@ -1097,7 +1100,7 @@ int diaryScreen(void)
                             // 1.DiaryObjを作成．その日付にstrftimeで作成した文字列を入れる
                             strcpy(dObj.date, timeBuf);
                             // 2.dbをopenする
-                            rc = sqlite3_open("testDB.db", &appObj.db);
+                            rc = sqlite3_open(DBFILE, &appObj.db);
                             if(rc){
                                 fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj.db));
                                 sqlite3_close(appObj.db);
@@ -1120,7 +1123,7 @@ int diaryScreen(void)
                                 strcpy(dObj.created_at, timeBuf);
                                 strcpy(dObj.updated_at, timeBuf);
                                 //db更新
-                                // rc = sqlite3_open("testDB.db", &appObj.db);
+                                // rc = sqlite3_open(DBFILE, &appObj.db);
                                 // if(rc){
                                 //     fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj.db));
                                 //     sqlite3_close(appObj.db);
@@ -1157,7 +1160,7 @@ int diaryScreen(void)
                                 strcpy(dObj.content, tObj.content);
 
                                 //db更新
-                                rc = sqlite3_open("testDB.db", &appObj.db);
+                                rc = sqlite3_open(DBFILE, &appObj.db);
                                 if(rc){
                                     fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(appObj.db));
                                     sqlite3_close(appObj.db);
@@ -1210,7 +1213,25 @@ int main(void)
     /* DB関連 */
     sqlite3* db;
     int rc;
-
+    // DBファイルなかったらsqlite3_openで作成
+    // ここでdbファイルとテーブル，作成
+    rc = sqlite3_open(DBFILE, &db);
+    if(rc){
+        fprintf(stderr,"Cant't open database: %s\n",sqlite3_errmsg(db));
+        sqlite3_close(db);
+        return(-1);
+    }
+    rc = createTable(db,"diary","id INTEGER PRIMARY KEY, date TEXT, title TEXT, content TEXT, created_at TEXT, updated_at TEXT");
+    if(rc!=SQLITE_OK){
+        fprintf(stderr,"createTable failed: %d\n",rc);
+        return(-1);
+    }
+    rc = createTable(db,"toDo","id INTEGER PRIMARY KEY, date TEXT, task TEXT, status INTEGER");
+    if(rc!=SQLITE_OK){
+        fprintf(stderr,"createTable failed: %d\n",rc);
+        return(-1);
+    }
+    sqlite3_close(db);
     /* 本体 ( screen関数の戻り値が次の画面への状態　)*/
     int i = 1;
     int nextScreen = MainScreen();

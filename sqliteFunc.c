@@ -103,12 +103,12 @@ int insertToDoTable(sqlite3* db, ToDoObj *t){
         sqlite3_finalize(stmt);
         return rc;
     }
-    sqlite3_bind_text(stmt, 2, t->task, -1,SQLITE_STATIC);
+    rc = sqlite3_bind_text(stmt, 2, t->task, -1,SQLITE_STATIC);
     if(rc!=SQLITE_OK) {
         sqlite3_finalize(stmt);
         return rc;
     }
-    sqlite3_bind_int(stmt,3, t->status);
+    rc = sqlite3_bind_int(stmt,3, t->status);
     if(rc!=SQLITE_OK) {
         sqlite3_finalize(stmt);
         return rc;
